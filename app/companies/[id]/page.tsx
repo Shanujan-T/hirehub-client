@@ -3,20 +3,26 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Building2, ExternalLink, MapPin } from "lucide-react";
+import { Building2, ExternalLink, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { JobCard } from "@/components/cards";
-import { Button } from "@/components/ui/button";
+import { EntityAvatar } from "@/components/entity-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { buttonVariants } from "@/components/ui/button";
+import { useAuth } from "@/providers/auth-provider";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
 import type { Company } from "@/types";
 
+function formatWebsiteHref(website: string): string {
+  return /^https?:\/\//i.test(website) ? website : `https://${website}`;
+}
+
 export default function CompanyDetailPage() {
   const params = useParams();
   const companyId = Number(params.id);
+  const { user, isAuthenticated } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,23 +64,24 @@ export default function CompanyDetailPage() {
   }
 
   const openJobs = company.jobs ?? [];
+  const isOwner =
+    isAuthenticated &&
+    user?.role === "employer" &&
+    user.id === company.owner_id;
 
   return (
     <div className="bg-surface min-h-screen">
       <div className="hero-gradient border-b border-default">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex items-start gap-6">
-            {company.logo_url ? (
-              <img
-                src={company.logo_url}
-                alt={company.name}
-                className="h-20 w-20 rounded-2xl border border-[#FDFDFD]/20 bg-[#FDFDFD] object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#FDFDFD]/10">
-                <Building2 className="h-10 w-10 text-[#FDFDFD]" />
-              </div>
-            )}
+            <EntityAvatar
+              name={company.name}
+              imageUrl={company.logo_url}
+              entityId={company.id}
+              industry={company.industry}
+              variant="company"
+              className="size-20 shrink-0 rounded-2xl text-2xl"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold text-[#FDFDFD]">{company.name}</h1>
@@ -92,17 +99,6 @@ export default function CompanyDetailPage() {
                   <MapPin className="h-4 w-4" /> {company.location}
                 </p>
               )}
-              {company.website && (
-                <a
-                  href={company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-[#F94D32] hover:underline"
-                >
-                  {company.website.replace(/^https?:\/\//, "")}
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
             </div>
           </div>
         </div>
@@ -116,9 +112,28 @@ export default function CompanyDetailPage() {
                 <CardTitle>About {company.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-subtle whitespace-pre-wrap text-sm leading-relaxed">
-                  {company.description || "No company description available."}
-                </p>
+                {company.description ? (
+                  <p className="text-subtle whitespace-pre-wrap text-sm leading-relaxed">
+                    {company.description}
+                  </p>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <FileText className="text-subtle mt-0.5 h-4 w-4 shrink-0 opacity-40" />
+                    <div>
+                      <p className="text-subtle text-sm italic opacity-80">
+                        This company hasn&apos;t added a description yet.
+                      </p>
+                      {isOwner && (
+                        <Link
+                          href="/employer/company"
+                          className="mt-2 inline-block text-sm font-medium text-[var(--brand-blue)] hover:underline"
+                        >
+                          Add a company description →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -134,7 +149,7 @@ export default function CompanyDetailPage() {
               ) : (
                 <div className="grid gap-4">
                   {openJobs.map((job) => (
-                    <JobCard key={job.id} job={job} />
+                    <JobCard key={job.id} job={job} hideCompanyVerified />
                   ))}
                 </div>
               )}
@@ -147,22 +162,36 @@ export default function CompanyDetailPage() {
                 <CardTitle>Company Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                {company.industry && (
-                  <div>
-                    <p className="text-subtle text-xs uppercase tracking-wide">Industry</p>
-                    <p className="text-heading font-medium">{company.industry}</p>
-                  </div>
-                )}
-                {company.location && (
-                  <div>
-                    <p className="text-subtle text-xs uppercase tracking-wide">Location</p>
-                    <p className="text-heading font-medium">{company.location}</p>
-                  </div>
-                )}
                 <div>
                   <p className="text-subtle text-xs uppercase tracking-wide">Open Roles</p>
                   <p className="text-heading font-medium">{openJobs.length}</p>
                 </div>
+                {company.founded_year != null && (
+                  <div>
+                    <p className="text-subtle text-xs uppercase tracking-wide">Founded</p>
+                    <p className="text-heading font-medium">{company.founded_year}</p>
+                  </div>
+                )}
+                {company.company_size && (
+                  <div>
+                    <p className="text-subtle text-xs uppercase tracking-wide">Company Size</p>
+                    <p className="text-heading font-medium">{company.company_size}</p>
+                  </div>
+                )}
+                {company.website && (
+                  <div>
+                    <p className="text-subtle text-xs uppercase tracking-wide">Website</p>
+                    <a
+                      href={formatWebsiteHref(company.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-heading inline-flex items-center gap-1 font-medium text-[var(--brand-blue)] hover:underline"
+                    >
+                      Visit website
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </aside>
