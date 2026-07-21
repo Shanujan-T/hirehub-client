@@ -64,6 +64,8 @@ export interface Company {
   website: string | null;
   location: string | null;
   logo_url: string | null;
+  founded_year: number | null;
+  company_size: string | null;
   is_verified: boolean;
   created_at: string | null;
   open_jobs_count?: number;
@@ -490,6 +492,7 @@ export interface LoginResponse {
 
 export interface RegisterResponse {
   message: string;
+  access_token: string;
   user: User;
 }
 
@@ -609,6 +612,8 @@ export interface CreateCompanyPayload {
   website?: string;
   location?: string;
   logo_url?: string;
+  founded_year?: number | null;
+  company_size?: string;
 }
 
 export interface UpdateProfilePayload {
