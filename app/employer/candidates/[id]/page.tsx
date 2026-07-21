@@ -292,6 +292,8 @@ function CandidateProfileContent() {
 
                 name={candidate.full_name}
 
+                entityId={candidate.id}
+
                 size="lg"
 
               />
