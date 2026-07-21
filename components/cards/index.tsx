@@ -64,6 +64,25 @@ interface JobCardProps {
   className?: string;
   showStatus?: boolean;
   variant?: "default" | "compact";
+  hideCompanyVerified?: boolean;
+}
+
+function SalaryDisplay({
+  min,
+  max,
+}: {
+  min: number | null | undefined;
+  max: number | null | undefined;
+}) {
+  const label = formatSalary(min, max);
+  if (label === "Not disclosed") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        Not disclosed
+      </span>
+    );
+  }
+  return <p className="text-sm font-medium text-heading">{label}</p>;
 }
 
 export function JobCard({
@@ -71,6 +90,7 @@ export function JobCard({
   className,
   showStatus = true,
   variant = "default",
+  hideCompanyVerified = false,
 }: JobCardProps) {
   const company = job.company;
 
@@ -92,7 +112,7 @@ export function JobCard({
               </h3>
               <p className="mt-0.5 text-sm text-subtle">
                 {company?.name ?? "Company"}
-                {company?.is_verified && (
+                {!hideCompanyVerified && company?.is_verified && (
                   <BadgeCheck
                     className="ml-1 inline h-3.5 w-3.5 text-[var(--brand-blue)]"
                     aria-label="Verified company"
@@ -125,7 +145,7 @@ export function JobCard({
             </h3>
             <p className="mt-0.5 text-sm text-subtle">
               {company?.name ?? "Company"}
-              {company?.is_verified && (
+              {!hideCompanyVerified && company?.is_verified && (
                 <BadgeCheck className="ml-1 inline h-3.5 w-3.5 text-[var(--brand-blue)]" aria-label="Verified company" />
               )}
             </p>
@@ -147,9 +167,7 @@ export function JobCard({
         </span>
       </div>
 
-      <p className="text-sm font-medium text-heading">
-        {formatSalary(job.salary_min, job.salary_max)}
-      </p>
+      <SalaryDisplay min={job.salary_min} max={job.salary_max} />
 
       <SkillTags skills={job.skills} />
 
