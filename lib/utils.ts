@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 export function getDashboardPath(role: UserRole): string {
   switch (role) {
     case "seeker":
-      return "/seeker/dashboard";
+      return "/dashboard";
     case "employer":
       return "/employer/dashboard";
     case "admin":
@@ -18,6 +18,12 @@ export function getDashboardPath(role: UserRole): string {
     default:
       return "/";
   }
+}
+
+/** Role-specific "My Communities" portal route (shared view, different sidebar context). */
+export function getMyCommunitiesPath(role: UserRole | undefined): string {
+  if (role === "employer") return "/employer/communities";
+  return "/my-communities";
 }
 
 export function formatDate(
