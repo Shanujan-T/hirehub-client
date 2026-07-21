@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { AdminPageHeader, AdminShell } from "@/app/admin/_components/admin-shell";
 import { FormGroup, LoadingState } from "@/app/_components/page-states";
+import { AvatarUpload } from "@/components/avatar-upload";
 import { Avatar } from "@/components/ui/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 function ProfileContent() {
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, updateProfile } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -80,7 +81,7 @@ function ProfileContent() {
 
       <Card className="max-w-2xl">
         <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar src={user.avatar_url} name={user.full_name} size="lg" />
+          <Avatar src={user.avatar_url} name={user.full_name} size="lg" entityId={user.id} />
           <div>
             <CardTitle>{user.full_name}</CardTitle>
             <p className="text-subtle text-sm">{user.email}</p>
@@ -89,7 +90,23 @@ function ProfileContent() {
             </p>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          <AvatarUpload
+            currentImageUrl={user.avatar_url}
+            name={user.full_name}
+            entityId={user.id}
+            shape="circle"
+            label="Profile photo"
+            onUpload={async (file) => {
+              await authService.uploadAvatar(file);
+              await refreshProfile?.();
+              toast.success("Profile photo updated");
+            }}
+            onRemove={async () => {
+              await updateProfile({ avatar_url: "" });
+              toast.success("Profile photo removed");
+            }}
+          />
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FormGroup label="Full name">
               <Input {...register("full_name")} error={errors.full_name?.message} />
