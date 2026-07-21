@@ -8,21 +8,25 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, Badge } from "@/components/ui/shared";
+import { AvatarUpload } from "@/components/avatar-upload";
+import { EntityAvatar } from "@/components/entity-avatar";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { useAuth } from "@/providers/auth-provider";
 import socialService from "@/services/social";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatDate, formatLabel } from "@/lib/utils";
+import { formatDate, formatLabel, getMyCommunitiesPath } from "@/lib/utils";
 import type { Community, Post } from "@/types";
 
 function CommunityDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading: authLoading, token } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, token, user } = useAuth();
   const communityId = Number(params.id);
   const fromMyCommunities = searchParams.get("from") === "my-communities";
-  const backHref = fromMyCommunities ? "/employer/communities" : "/communities";
+  const backHref = fromMyCommunities
+    ? getMyCommunitiesPath(user?.role)
+    : "/communities";
   const backLabel = fromMyCommunities ? "My Communities" : "All communities";
 
   const [community, setCommunity] = useState<Community | null>(null);
@@ -30,6 +34,8 @@ function CommunityDetailPage() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
 
+  const isOwner =
+    isAuthenticated && user != null && community?.created_by === user.id;
   const isMember = community?.is_member ?? false;
 
   const loadData = async () => {
@@ -141,17 +147,14 @@ function CommunityDetailPage() {
 
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            {community.avatar_url ? (
-              <img
-                src={community.avatar_url}
-                alt={community.name}
-                className="h-16 w-16 rounded-2xl object-cover"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0C44B7]/10">
-                <Users className="h-8 w-8 text-[#0C44B7]" />
-              </div>
-            )}
+            <EntityAvatar
+              name={community.name}
+              imageUrl={community.avatar_url}
+              entityId={community.id}
+              communityType={community.type}
+              variant="community"
+              className="size-16 shrink-0 rounded-2xl text-xl"
+            />
             <div>
               <h1 className="text-heading text-2xl font-bold">{community.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -221,6 +224,7 @@ function CommunityDetailPage() {
                               <Avatar
                                 name={post.author.full_name}
                                 src={post.author.avatar_url}
+                                entityId={post.author.id}
                                 size="sm"
                               />
                             )}
@@ -242,7 +246,40 @@ function CommunityDetailPage() {
             </div>
           </div>
 
-          <aside>
+          <aside className="space-y-4">
+            {isOwner && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Community logo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AvatarUpload
+                    currentImageUrl={community.avatar_url}
+                    name={community.name}
+                    entityId={community.id}
+                    communityType={community.type}
+                    variant="community"
+                    shape="rounded-square"
+                    label="Logo"
+                    onUpload={async (file) => {
+                      const updated = await socialService.uploadCommunityLogo(
+                        community.id,
+                        file,
+                      );
+                      setCommunity(updated);
+                      toast.success("Community logo updated");
+                    }}
+                    onRemove={async () => {
+                      const updated = await socialService.updateCommunity(community.id, {
+                        avatar_url: "",
+                      });
+                      setCommunity(updated);
+                      toast.success("Community logo removed");
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardHeader>
                 <CardTitle>Details</CardTitle>
