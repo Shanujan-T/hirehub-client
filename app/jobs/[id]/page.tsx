@@ -22,6 +22,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/shared";
+import { EntityAvatar } from "@/components/entity-avatar";
 import { useAuth } from "@/providers/auth-provider";
 import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
@@ -339,7 +340,18 @@ export default function JobDetailPage() {
                     <CardTitle>About the Company</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-heading font-semibold">{job.company.name}</p>
+                    <div className="flex items-center gap-3">
+                      <EntityAvatar
+                        name={job.company.name}
+                        imageUrl={job.company.logo_url}
+                        entityId={job.company.id}
+                        industry={job.company.industry}
+                        variant="company"
+                        size="sm"
+                        className="rounded-lg"
+                      />
+                      <p className="text-heading font-semibold">{job.company.name}</p>
+                    </div>
                     {job.company.industry && (
                       <p className="text-subtle text-sm">{job.company.industry}</p>
                     )}
