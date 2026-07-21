@@ -57,7 +57,7 @@ function RegisterForm() {
         password: data.password,
         role: data.role,
       });
-      toast.success("Account created successfully!");
+      toast.success("Account created — welcome!");
       router.push(getDashboardPath(user.role));
     } catch (err) {
       toast.error(getApiErrorMessage(err));
