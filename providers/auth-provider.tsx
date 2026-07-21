@@ -87,19 +87,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const establishSession = useCallback((accessToken: string, sessionUser: User) => {
+    persistSession(accessToken, sessionUser);
+    setToken(accessToken);
+    setUser(sessionUser);
+    return sessionUser;
+  }, []);
+
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await authService.login(payload);
-    persistSession(response.access_token, response.user);
-    setToken(response.access_token);
-    setUser(response.user);
-    return response.user;
-  }, []);
+    return establishSession(response.access_token, response.user);
+  }, [establishSession]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
     const response = await authService.register(payload);
-    setUser(response.user);
-    return response.user;
-  }, []);
+    if (!response.access_token || !response.user?.id || !response.user.email) {
+      throw new Error(
+        "Registration did not complete. The server response was missing account data.",
+      );
+    }
+    return establishSession(response.access_token, response.user);
+  }, [establishSession]);
 
   const logout = useCallback(async () => {
     try {
