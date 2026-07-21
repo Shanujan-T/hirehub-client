@@ -1,4 +1,5 @@
-import { cn, formatLabel } from "@/lib/utils";
+import { cn, formatLabel, resolveMediaUrl } from "@/lib/utils";
+import { getEntityInitials, getInitialAvatarClass } from "@/lib/avatar-utils";
 import { STATUS_COLORS } from "@/lib/constants";
 import type { ApplicationStatus } from "@/types";
 
@@ -6,6 +7,7 @@ interface AvatarProps {
   src?: string | null;
   name: string;
   size?: "sm" | "md" | "lg";
+  entityId?: number;
   className?: string;
 }
 
@@ -15,24 +17,16 @@ const avatarSizes = {
   lg: "size-14 text-base",
 };
 
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
-
-export function Avatar({ src, name, size = "md", className }: AvatarProps) {
-  const initials = getInitials(name);
+export function Avatar({ src, name, size = "md", entityId, className }: AvatarProps) {
+  const initials = getEntityInitials(name);
+  const resolvedSrc = resolveMediaUrl(src);
   const dimension = size === "sm" ? 32 : size === "md" ? 40 : 56;
 
-  if (src) {
+  if (resolvedSrc) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name}
         width={dimension}
         height={dimension}
@@ -48,13 +42,14 @@ export function Avatar({ src, name, size = "md", className }: AvatarProps) {
   return (
     <div
       className={cn(
-        "inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#0C44B7] via-[#AB2F74] to-[#F94D32] font-semibold text-white",
+        "inline-flex items-center justify-center rounded-full font-semibold",
         avatarSizes[size],
+        getInitialAvatarClass({ entityId }),
         className,
       )}
       aria-label={name}
     >
-      {initials || "?"}
+      {initials}
     </div>
   );
 }
