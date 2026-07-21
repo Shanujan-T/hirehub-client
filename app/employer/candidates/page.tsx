@@ -32,6 +32,7 @@ function CandidateCard({ candidate }: { candidate: CandidateUser }) {
           <Avatar
             src={candidate.avatar_url}
             name={candidate.full_name}
+            entityId={candidate.id}
             size="lg"
           />
           <div className="min-w-0 flex-1">
