@@ -25,6 +25,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { Avatar } from "@/components/ui/shared";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
@@ -38,6 +39,7 @@ const publicLinks = [
 const sidebarLinks: Record<UserRole, { href: string; label: string; icon: typeof LayoutDashboard }[]> = {
   seeker: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/my-communities", label: "My Communities", icon: Users },
     { href: "/applications", label: "Applications", icon: FileText },
     { href: "/saved-jobs", label: "Saved Jobs", icon: Bookmark },
     { href: "/profile", label: "Profile", icon: User },
@@ -127,7 +129,12 @@ export function Navbar() {
                 href={user.role === "employer" ? "/employer/dashboard" : user.role === "admin" ? "/admin/dashboard" : "/dashboard"}
                 className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-subtle transition-colors hover:text-heading sm:inline-flex"
               >
-                <User className="h-4 w-4" />
+                <Avatar
+                  src={user.avatar_url}
+                  name={user.full_name}
+                  entityId={user.id}
+                  size="sm"
+                />
                 {user.full_name.split(" ")[0]}
               </Link>
               <button
