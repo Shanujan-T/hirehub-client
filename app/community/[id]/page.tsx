@@ -89,7 +89,7 @@ export default function PostDetailPage() {
     >
       <div className="flex gap-3">
         {comment.author && (
-          <Avatar name={comment.author.full_name} src={comment.author.avatar_url} size="sm" />
+          <Avatar name={comment.author.full_name} src={comment.author.avatar_url} entityId={comment.author.id} size="sm" />
         )}
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function PostDetailPage() {
           <CardContent className="p-6">
             <div className="mb-4 flex items-start gap-3">
               {post.author && (
-                <Avatar name={post.author.full_name} src={post.author.avatar_url} />
+                <Avatar name={post.author.full_name} src={post.author.avatar_url} entityId={post.author.id} />
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
