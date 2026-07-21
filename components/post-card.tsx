@@ -33,7 +33,7 @@ export function PostCard({ post, className }: PostCardProps) {
         <div className="p-5">
           <div className="mb-3 flex items-start gap-3">
             {post.author && (
-              <Avatar name={post.author.full_name} src={post.author.avatar_url} />
+              <Avatar name={post.author.full_name} src={post.author.avatar_url} entityId={post.author.id} />
             )}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
