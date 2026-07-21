@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type AxiosInstance } from "axios";
-import { API_BASE_URL, AUTH_PATHS, TOKEN_KEY } from "./constants";
+import { API_BASE_URL, AUTH_PATHS, TOKEN_KEY, USER_KEY } from "./constants";
 
 export interface ApiErrorBody {
   error?: string;
@@ -10,6 +10,8 @@ export interface ApiErrorBody {
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  timeout: 30_000,
+  withCredentials: Boolean(API_BASE_URL),
 });
 
 /** In-memory token mirror so requests never miss auth during hydration. */
@@ -22,6 +24,13 @@ export function setApiAuthToken(token: string | null) {
 function resolveAuthToken(): string | null {
   if (typeof window === "undefined") return memoryAuthToken;
   return memoryAuthToken ?? localStorage.getItem(TOKEN_KEY);
+}
+
+function clearStoredSession() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  setApiAuthToken(null);
 }
 
 apiClient.interceptors.request.use((config) => {
@@ -42,8 +51,7 @@ apiClient.interceptors.response.use(
       const pathname = window.location.pathname;
       const isAuthPage = AUTH_PATHS.some((p) => pathname.startsWith(p));
       if (!isAuthPage) {
-        localStorage.removeItem(TOKEN_KEY);
-        setApiAuthToken(null);
+        clearStoredSession();
         window.location.href = "/auth/login";
       }
     }
@@ -59,6 +67,9 @@ export function getApiErrorMessage(
     if (!error.response) {
       if (error.code === "ERR_NETWORK") {
         return "Cannot reach the API server. Make sure hirehub-api is running on port 5000.";
+      }
+      if (error.code === "ECONNABORTED") {
+        return "Request timed out. Check that the API server is running.";
       }
       return error.message || "Network error. Check your connection and API server.";
     }
