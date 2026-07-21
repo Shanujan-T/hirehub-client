@@ -60,6 +60,17 @@ export const authService = {
     return data.user;
   },
 
+  async uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append("avatar", file);
+    const { data } = await apiClient.post<{ user: User; message: string }>(
+      "/api/me/avatar",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data.user;
+  },
+
   async forgotPassword(
     payload: ForgotPasswordPayload,
   ): Promise<MessageResponse & { reset_token?: string; expires_at?: string }> {
