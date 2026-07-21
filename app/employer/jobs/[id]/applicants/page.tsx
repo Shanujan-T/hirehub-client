@@ -117,6 +117,7 @@ function ApplicantRow({
           <Avatar
             src={seeker?.avatar_url}
             name={seeker?.full_name ?? "Candidate"}
+            entityId={seeker?.id}
             size="lg"
           />
           <div>
