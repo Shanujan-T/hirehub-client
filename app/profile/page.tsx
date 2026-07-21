@@ -17,6 +17,7 @@ import { AuthenticatedRoute } from "@/components/auth-guard";
 import { PortalLayout } from "@/components/layout/main-layout";
 
 import { ResumeUpload } from "@/components/resume-upload";
+import { AvatarUpload } from "@/components/avatar-upload";
 
 import { Button } from "@/components/ui/button";
 
@@ -63,8 +64,7 @@ type FormData = z.infer<typeof schema>;
 
 
 function ProfileContent() {
-
-  const { user, updateProfile, refreshProfile } = useAuth();
+  const { user, refreshProfile, updateProfile } = useAuth();
 
   const [saving, setSaving] = useState(false);
 
@@ -168,6 +168,48 @@ function ProfileContent() {
 
 
 
+  const handleAvatarUpload = async (file: File) => {
+
+    try {
+
+      await authService.uploadAvatar(file);
+
+      await refreshProfile();
+
+      toast.success("Profile photo updated");
+
+    } catch (err) {
+
+      toast.error(getApiErrorMessage(err));
+
+      throw err;
+
+    }
+
+  };
+
+
+
+  const handleAvatarRemove = async () => {
+
+    try {
+
+      await updateProfile({ avatar_url: "" });
+
+      toast.success("Profile photo removed");
+
+    } catch (err) {
+
+      toast.error(getApiErrorMessage(err));
+
+      throw err;
+
+    }
+
+  };
+
+
+
   const resumeHref = resolveMediaUrl(user.resume_url);
 
 
@@ -183,6 +225,38 @@ function ProfileContent() {
         <p className="text-subtle mt-1">Update your professional information</p>
 
       </div>
+
+      <Card className="border-default bg-surface-card">
+
+        <CardHeader>
+
+          <CardTitle>Profile photo</CardTitle>
+
+        </CardHeader>
+
+        <CardContent>
+
+          <AvatarUpload
+
+            currentImageUrl={user.avatar_url}
+
+            name={user.full_name}
+
+            entityId={user.id}
+
+            shape="circle"
+
+            label="Your photo"
+
+            onUpload={handleAvatarUpload}
+
+            onRemove={handleAvatarRemove}
+
+          />
+
+        </CardContent>
+
+      </Card>
 
       <Card className="border-default bg-surface-card">
 
@@ -324,7 +398,7 @@ export default function ProfilePage() {
 
     <AuthenticatedRoute>
 
-      <PortalLayout role="seeker">
+      <PortalLayout>
 
         <ProfileContent />
 
