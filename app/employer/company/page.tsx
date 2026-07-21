@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/card";
 import { Badge } from "@/components/ui/shared";
 import { FormGroup, LoadingState } from "@/app/_components/page-states";
 import { PageHeader } from "@/app/employer/_components/page-header";
+import { AvatarUpload } from "@/components/avatar-upload";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
 import type { Company } from "@/types";
@@ -26,7 +27,10 @@ const companySchema = z.object({
   description: z.string().optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   location: z.string().optional(),
-  logo_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  founded_year: z
+    .union([z.literal(""), z.coerce.number().int().min(1800).max(new Date().getFullYear())])
+    .optional(),
+  company_size: z.string().max(50).optional(),
 });
 
 type CompanyForm = z.infer<typeof companySchema>;
@@ -51,7 +55,8 @@ function CompanyProfileContent() {
       description: "",
       website: "",
       location: "",
-      logo_url: "",
+      founded_year: "",
+      company_size: "",
     },
   });
 
@@ -66,7 +71,8 @@ function CompanyProfileContent() {
           description: data.description ?? "",
           website: data.website ?? "",
           location: data.location ?? "",
-          logo_url: data.logo_url ?? "",
+          founded_year: data.founded_year ?? "",
+          company_size: data.company_size ?? "",
         });
       })
       .catch((err) => {
@@ -89,7 +95,8 @@ function CompanyProfileContent() {
         description: data.description || undefined,
         website: data.website || undefined,
         location: data.location || undefined,
-        logo_url: data.logo_url || undefined,
+        founded_year: data.founded_year === "" || data.founded_year == null ? null : Number(data.founded_year),
+        company_size: data.company_size || undefined,
       };
 
       if (isNew) {
@@ -133,6 +140,29 @@ function CompanyProfileContent() {
           {company?.is_verified && <Badge variant="success">Verified</Badge>}
         </CardHeader>
         <CardContent>
+          {!isNew && company && (
+            <div className="mb-6 border-b border-default pb-6">
+              <AvatarUpload
+                currentImageUrl={company.logo_url}
+                name={company.name}
+                entityId={company.id}
+                industry={company.industry}
+                variant="company"
+                shape="rounded-square"
+                label="Company logo"
+                onUpload={async (file) => {
+                  const updated = await companiesService.uploadLogo(company.id, file);
+                  setCompany(updated);
+                  toast.success("Company logo updated");
+                }}
+                onRemove={async () => {
+                  const updated = await companiesService.update(company.id, { logo_url: "" });
+                  setCompany(updated);
+                  toast.success("Company logo removed");
+                }}
+              />
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FormGroup label="Company name">
               <Input
@@ -177,13 +207,24 @@ function CompanyProfileContent() {
               </FormGroup>
             </div>
 
-            <FormGroup label="Logo URL">
-              <Input
-                {...register("logo_url")}
-                placeholder="https://example.com/logo.png"
-                error={errors.logo_url?.message}
-              />
-            </FormGroup>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormGroup label="Founded year">
+                <Input
+                  {...register("founded_year")}
+                  type="number"
+                  placeholder="e.g. 2015"
+                  error={errors.founded_year?.message}
+                />
+              </FormGroup>
+
+              <FormGroup label="Company size">
+                <Input
+                  {...register("company_size")}
+                  placeholder="e.g. 11-50 employees"
+                  error={errors.company_size?.message}
+                />
+              </FormGroup>
+            </div>
 
             <div className="flex gap-3 pt-2">
               <Button type="submit" loading={submitting}>
