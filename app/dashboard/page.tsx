@@ -72,6 +72,37 @@ function SeekerDashboardContent() {
         />
       ) : null}
 
+      {typeof data.profile_completion_score === "number" ? (
+        <Card className="glass-card border-default">
+          <CardContent className="space-y-3 pt-6">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-heading">Profile completion</p>
+              <span className="text-sm font-bold text-[var(--brand-blue)]">
+                {data.profile_completion_score}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-magenta)] transition-all"
+                style={{ width: `${data.profile_completion_score}%` }}
+              />
+            </div>
+            {data.badges?.length ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {data.badges.map((badge) => (
+                  <span
+                    key={badge}
+                    className="rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_12%,var(--surface-muted))] px-2.5 py-0.5 text-xs font-semibold text-heading"
+                  >
+                    {badge}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Object.entries(data.applications_by_status ?? {}).map(([status, count]) => (
           <div key={status} className="stat-card p-5">
