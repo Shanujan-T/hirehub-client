@@ -22,6 +22,14 @@ export const JOB_TYPES = [
   "part_time",
   "internship",
   "contract",
+  "micro_internship",
+] as const;
+
+export const NOTIFY_VIA_OPTIONS = [
+  "email",
+  "whatsapp",
+  "both",
+  "none",
 ] as const;
 
 export const EXPERIENCE_LEVELS = [
