@@ -15,8 +15,42 @@ import { getApiErrorMessage } from "@/lib/api-client";
 import { PAGE_HEADER_BAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { EXPERIENCE_LEVELS, JOB_TYPES } from "@/lib/constants";
-import { formatLabel } from "@/lib/utils";
-import type { Job, JobsQueryParams } from "@/types";
+import { formatLabel, formatSalary } from "@/lib/utils";
+import type { Job, JobsQueryParams, SalaryInsight } from "@/types";
+
+function SalaryInsightsPanel() {
+  const searchParams = useSearchParams();
+  const [insight, setInsight] = useState<SalaryInsight | null>(null);
+
+  const role = searchParams.get("category") || searchParams.get("q") || "";
+  const location = searchParams.get("location") || "";
+
+  useEffect(() => {
+    jobsService
+      .getSalaryInsights({
+        role: role || undefined,
+        location: location || undefined,
+      })
+      .then(setInsight)
+      .catch(() => setInsight(null));
+  }, [role, location]);
+
+  if (!insight?.count) return null;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-default bg-surface-card p-4">
+      <h3 className="text-heading text-sm font-bold uppercase tracking-wide">Salary insights</h3>
+      <p className="text-subtle mt-2 text-sm">
+        {role || "Roles"}
+        {location ? ` in ${location}` : ""}:{" "}
+        <span className="font-medium text-heading">
+          {formatSalary(insight.avg_salary_min, insight.avg_salary_max)}
+        </span>{" "}
+        avg, based on {insight.count} posting{insight.count !== 1 ? "s" : ""}.
+      </p>
+    </div>
+  );
+}
 
 function JobFiltersPanel() {
   const router = useRouter();
@@ -158,6 +192,7 @@ function JobsPage() {
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
           <aside>
             <JobFiltersPanel />
+            <SalaryInsightsPanel />
           </aside>
 
           <main>
