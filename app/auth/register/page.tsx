@@ -57,6 +57,13 @@ function RegisterForm() {
         password: data.password,
         role: data.role,
       });
+      // Success UI only after a verified 2xx response with real account data.
+      if (!user?.id || !user.email) {
+        toast.error(
+          "Registration did not complete. The server response was missing account data.",
+        );
+        return;
+      }
       toast.success("Account created — welcome!");
       router.push(getDashboardPath(user.role));
     } catch (err) {
