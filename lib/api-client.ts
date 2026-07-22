@@ -59,17 +59,29 @@ apiClient.interceptors.response.use(
   },
 );
 
+/** True when axios failed before receiving any HTTP response (server down, refused, offline). */
+export function isApiUnreachableError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  if (error.response) return false;
+  return (
+    error.code === "ERR_NETWORK" ||
+    error.code === "ECONNREFUSED" ||
+    error.code === "ERR_CONNECTION_REFUSED" ||
+    error.code === "ECONNABORTED"
+  );
+}
+
 export function getApiErrorMessage(
   error: unknown,
   fallback = "Something went wrong.",
 ): string {
   if (axios.isAxiosError<ApiErrorBody>(error)) {
     if (!error.response) {
-      if (error.code === "ERR_NETWORK") {
+      if (isApiUnreachableError(error)) {
+        if (error.code === "ECONNABORTED") {
+          return "Request timed out. Check that the API server is running.";
+        }
         return "Cannot reach the API server. Make sure hirehub-api is running on port 5000.";
-      }
-      if (error.code === "ECONNABORTED") {
-        return "Request timed out. Check that the API server is running.";
       }
       return error.message || "Network error. Check your connection and API server.";
     }
