@@ -11,6 +11,7 @@ import { GuestRoute } from "@/components/auth-guard";
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import { FormGroup } from "@/app/_components/page-states";
 import { useAuth } from "@/providers/auth-provider";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -60,9 +61,8 @@ function LoginForm() {
         </FormGroup>
 
         <FormGroup label="Password">
-          <Input
+          <PasswordInput
             {...register("password")}
-            type="password"
             placeholder="••••••••"
             autoComplete="current-password"
             error={errors.password?.message}
