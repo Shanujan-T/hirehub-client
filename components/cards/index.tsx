@@ -161,9 +161,21 @@ export function JobCard({
             {job.location}
           </span>
         )}
+        {job.distance_km != null && (
+          <span className="text-xs font-medium text-[var(--brand-blue)]">
+            ~{job.distance_km} km from you
+          </span>
+        )}
         <span className="inline-flex items-center gap-1">
           <Clock className="h-3.5 w-3.5" />
-          {formatLabel(job.job_type)} · {formatLabel(job.experience_level)}
+          {job.job_type === "micro_internship" ? (
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
+              Micro-internship
+            </span>
+          ) : (
+            formatLabel(job.job_type)
+          )}{" "}
+          · {formatLabel(job.experience_level)}
         </span>
       </div>
 
