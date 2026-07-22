@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Trash2, BadgeCheck } from "lucide-react";
+import { Plus, Trash2, BadgeCheck, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { PortalLayout } from "@/components/layout/main-layout";
@@ -64,10 +64,19 @@ function MySkillsContent() {
                   <p className="flex items-center gap-2 font-semibold text-heading">
                     {item.skill?.name ?? "Skill"}
                     {item.verified ? (
-                      <BadgeCheck className="h-4 w-4 text-[var(--brand-blue)]" aria-label="Verified by employer" />
+                      <BadgeCheck className="h-4 w-4 text-[var(--brand-blue)]" aria-label="Verified" />
                     ) : null}
                   </p>
                   <p className="text-subtle text-sm capitalize">{item.level}</p>
+                  {!item.verified && item.skill_id ? (
+                    <Link
+                      href={`/my/skills/${item.skill_id}/quiz`}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-blue)] hover:underline"
+                    >
+                      <GraduationCap className="h-3.5 w-3.5" />
+                      Take quiz to verify
+                    </Link>
+                  ) : null}
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => remove(item.id)}>
                   <Trash2 className="h-4 w-4 text-[var(--brand-rose)]" />
