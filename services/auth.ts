@@ -8,6 +8,7 @@ import type {
   RegisterPayload,
   RegisterResponse,
   ResetPasswordPayload,
+  NotificationPreferencesPayload,
   UpdateProfilePayload,
   User,
 } from "@/types";
@@ -86,6 +87,16 @@ export const authService = {
       payload,
     );
     return data;
+  },
+
+  async updateNotificationPreferences(
+    payload: NotificationPreferencesPayload,
+  ): Promise<User> {
+    const { data } = await apiClient.patch<{ user: User; message: string }>(
+      "/api/me/notification-preferences",
+      payload,
+    );
+    return data.user;
   },
 };
 
