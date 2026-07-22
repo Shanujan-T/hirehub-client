@@ -96,6 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (payload: LoginPayload) => {
     const response = await authService.login(payload);
+    if (!response.access_token || !response.user?.id || !response.user.email) {
+      throw new Error(
+        "Sign in did not complete. The server response was missing account data.",
+      );
+    }
     return establishSession(response.access_token, response.user);
   }, [establishSession]);
 
