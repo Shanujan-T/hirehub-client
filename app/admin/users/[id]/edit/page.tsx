@@ -14,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import { Textarea } from "@/components/ui/card";
 import usersService from "@/services/users";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -147,7 +148,7 @@ function EditUserForm() {
               <Textarea {...register("bio")} rows={4} />
             </FormGroup>
             <FormGroup label="New password (optional)">
-              <Input type="password" {...register("password")} error={errors.password?.message} />
+              <PasswordInput {...register("password")} error={errors.password?.message} />
             </FormGroup>
             <div className="flex gap-3 pt-2">
               <Button type="submit" loading={submitting}>

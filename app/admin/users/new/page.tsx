@@ -14,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import authService from "@/services/auth";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { EDUCATION_LEVELS, USER_ROLES } from "@/lib/constants";
@@ -81,7 +82,7 @@ function NewUserForm() {
               <Input type="email" {...register("email")} error={errors.email?.message} />
             </FormGroup>
             <FormGroup label="Password">
-              <Input type="password" {...register("password")} error={errors.password?.message} />
+              <PasswordInput {...register("password")} error={errors.password?.message} />
             </FormGroup>
             <FormGroup label="Role">
               <Select {...register("role")} error={errors.role?.message}>

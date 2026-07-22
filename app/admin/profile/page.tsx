@@ -12,6 +12,7 @@ import { Avatar } from "@/components/ui/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import { Textarea } from "@/components/ui/card";
 import { useAuth } from "@/providers/auth-provider";
 import authService from "@/services/auth";
@@ -121,8 +122,7 @@ function ProfileContent() {
               <Textarea {...register("bio")} rows={4} />
             </FormGroup>
             <FormGroup label="New password">
-              <Input
-                type="password"
+              <PasswordInput
                 {...register("password")}
                 placeholder="Leave blank to keep current"
                 error={errors.password?.message}
