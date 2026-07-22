@@ -224,6 +224,11 @@ export default function JobDetailPage() {
                       <MapPin className="h-4 w-4" /> {job.location}
                     </span>
                   )}
+                  {job.distance_km != null && (
+                    <span className="font-medium text-[var(--brand-blue)]">
+                      ~{job.distance_km} km from you
+                    </span>
+                  )}
                   {(job.salary_min || job.salary_max) && (
                     <span className="text-heading font-medium">
                       {formatSalary(job.salary_min, job.salary_max)}
