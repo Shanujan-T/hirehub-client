@@ -33,13 +33,14 @@ import { useAuth } from "@/providers/auth-provider";
 
 import authService from "@/services/auth";
 
-import { EDUCATION_LEVELS } from "@/lib/constants";
+import { EDUCATION_LEVELS, NOTIFY_VIA_OPTIONS } from "@/lib/constants";
 
 import { getApiErrorMessage } from "@/lib/api-client";
 
-import { resolveMediaUrl } from "@/lib/utils";
+import { resolveMediaUrl, formatLabel } from "@/lib/utils";
 
-import type { EducationLevel } from "@/types";
+import type { EducationLevel, NotifyVia } from "@/types";
+import dashboardService from "@/services/dashboard";
 
 
 
@@ -67,6 +68,10 @@ function ProfileContent() {
   const { user, refreshProfile, updateProfile } = useAuth();
 
   const [saving, setSaving] = useState(false);
+  const [notifyVia, setNotifyVia] = useState<NotifyVia>("email");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [savingNotify, setSavingNotify] = useState(false);
+  const [badges, setBadges] = useState<string[]>([]);
 
   const {
 
@@ -100,9 +105,24 @@ function ProfileContent() {
 
       });
 
+      setNotifyVia((user.notify_via as NotifyVia) || "email");
+      setWhatsappNumber(user.whatsapp_number ?? "");
+
     }
 
   }, [user, reset]);
+
+  useEffect(() => {
+    if (user?.role !== "seeker") return;
+    dashboardService
+      .get()
+      .then((data) => {
+        if (data.role === "seeker" && data.badges?.length) {
+          setBadges(data.badges);
+        }
+      })
+      .catch(() => undefined);
+  }, [user?.role]);
 
 
 
@@ -208,6 +228,26 @@ function ProfileContent() {
 
   };
 
+  const saveNotificationPrefs = async () => {
+    setSavingNotify(true);
+    try {
+      await authService.updateNotificationPreferences({
+        notify_via: notifyVia,
+        whatsapp_number: whatsappNumber || null,
+      });
+      await refreshProfile();
+      toast.success("Notification preferences saved");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingNotify(false);
+    }
+  };
+
+  const whatsappConnected =
+    Boolean(whatsappNumber) &&
+    (notifyVia === "whatsapp" || notifyVia === "both");
+
 
 
   const resumeHref = resolveMediaUrl(user.resume_url);
@@ -223,6 +263,19 @@ function ProfileContent() {
         <h1 className="font-display text-3xl font-extrabold text-heading">Profile</h1>
 
         <p className="text-subtle mt-1">Update your professional information</p>
+
+        {badges.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {badges.map((badge) => (
+              <span
+                key={badge}
+                className="rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_12%,var(--surface-muted))] px-2.5 py-0.5 text-xs font-semibold text-heading"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        )}
 
       </div>
 
@@ -346,7 +399,51 @@ function ProfileContent() {
 
       </Card>
 
-
+      {user.role === "seeker" && (
+        <Card className="border-default bg-surface-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Notification preferences
+              {whatsappConnected && (
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  WhatsApp connected
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="whatsapp_number">WhatsApp number</Label>
+              <Input
+                id="whatsapp_number"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(e.target.value)}
+                placeholder="+94771234567"
+              />
+              <p className="text-subtle mt-1 text-xs">
+                Include country code. Used for job-match alerts when enabled.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="notify_via">Alert channel</Label>
+              <Select
+                id="notify_via"
+                value={notifyVia}
+                onChange={(e) => setNotifyVia(e.target.value as NotifyVia)}
+              >
+                {NOTIFY_VIA_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {formatLabel(option)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button type="button" disabled={savingNotify} onClick={saveNotificationPrefs}>
+              {savingNotify ? "Saving..." : "Save notification preferences"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-default bg-surface-card">
 
