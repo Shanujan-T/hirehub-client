@@ -185,6 +185,14 @@ export const jobsService = {
     );
     return data;
   },
+
+  async getSalaryInsights(params?: { role?: string; location?: string }) {
+    const { data } = await apiClient.get<import("@/types").SalaryInsight>(
+      "/api/jobs/salary-insights",
+      { params },
+    );
+    return data;
+  },
 };
 
 export default jobsService;
