@@ -14,12 +14,14 @@ import type {
   REPORT_STATUSES,
   REPORT_TARGET_TYPES,
   SKILL_LEVELS,
+  NOTIFY_VIA_OPTIONS,
   USER_ROLES,
 } from "@/lib/constants";
 
 // ── Primitive unions ─────────────────────────────────────────────────────────
 
 export type UserRole = (typeof USER_ROLES)[number];
+export type NotifyVia = (typeof NOTIFY_VIA_OPTIONS)[number];
 export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
 export type JobType = (typeof JOB_TYPES)[number];
 export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
@@ -46,6 +48,8 @@ export interface User {
   bio: string | null;
   location: string | null;
   phone: string | null;
+  whatsapp_number: string | null;
+  notify_via: NotifyVia | null;
   education_level: EducationLevel | null;
   resume_url: string | null;
   avatar_url: string | null;
@@ -126,6 +130,7 @@ export interface Job {
   location: string | null;
   salary_min: number | null;
   salary_max: number | null;
+  distance_km?: number;
   deadline: string | null;
   status: JobStatus;
   image_url: string | null;
@@ -438,6 +443,42 @@ export interface SeekerDashboard {
   applications_by_status: Record<string, number>;
   applications: Application[];
   recommended_jobs: Job[];
+  profile_completion_score?: number;
+  badges?: string[];
+}
+
+export interface SalaryInsight {
+  role: string | null;
+  location: string | null;
+  count: number;
+  avg_salary_min: number | null;
+  avg_salary_max: number | null;
+}
+
+export interface SkillQuizQuestion {
+  id: number;
+  skill_id: number;
+  question: string;
+  options: string[];
+}
+
+export interface QuizSubmitPayload {
+  answers: number[];
+}
+
+export interface QuizResult {
+  message: string;
+  score: number;
+  passed: boolean;
+  pass_threshold: number;
+  correct_count: number;
+  total_questions: number;
+  user_skill: UserSkill;
+}
+
+export interface NotificationPreferencesPayload {
+  notify_via?: NotifyVia;
+  whatsapp_number?: string | null;
 }
 
 export interface EmployerDashboard {
