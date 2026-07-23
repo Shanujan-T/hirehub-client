@@ -465,6 +465,20 @@ export interface CommunityAnnouncement {
   created_at: string | null;
 }
 
+/** Payload for POST /api/communities — matches Community model create fields. */
+export interface CreateCommunityPayload {
+  name: string;
+  type?: CommunityType;
+  description?: string;
+  rules?: string;
+  cover_image_url?: string;
+  /** Community logo; set via JSON on create/update or POST /api/communities/:id/logo. */
+  avatar_url?: string;
+  location?: string;
+  industry?: string;
+  is_public?: boolean;
+}
+
 // ── Referrals ──────────────────────────────────────────────────────────────────
 
 export interface JobReferral {
@@ -810,18 +824,6 @@ export interface CreateSessionPayload {
   focus_area?: string;
   scheduled_at?: string;
   notes?: string;
-}
-
-export interface CreateCommunityPayload {
-  name: string;
-  type?: CommunityType;
-  description?: string;
-  rules?: string;
-  cover_image_url?: string;
-  avatar_url?: string;
-  location?: string;
-  industry?: string;
-  is_public?: boolean;
 }
 
 export interface CreateReferralPayload {
