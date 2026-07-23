@@ -33,7 +33,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <Toaster
-              position="top-right"
+              position="bottom-right"
               richColors
               closeButton
               toastOptions={{
