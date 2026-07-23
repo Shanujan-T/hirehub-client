@@ -16,9 +16,15 @@ import type {
 export const catalogService = {
   // ── Skills catalog ─────────────────────────────────────────────────────────
 
-  async listSkills(): Promise<Skill[]> {
-    const { data } = await apiClient.get<{ skills: Skill[] }>("/api/skills");
+  async listSkills(params?: { q?: string; search?: string }): Promise<Skill[]> {
+    const { data } = await apiClient.get<{ skills: Skill[] }>("/api/skills", {
+      params,
+    });
     return data.skills;
+  },
+
+  async searchSkills(search: string): Promise<Skill[]> {
+    return this.listSkills({ search });
   },
 
   async getSkill(id: number): Promise<Skill> {
@@ -138,6 +144,14 @@ export const catalogService = {
       message: string;
     }>(`/api/my/skills/${id}`, payload);
     return data.user_skill;
+  },
+
+  async replaceMySkills(skillIds: number[]): Promise<UserSkill[]> {
+    const { data } = await apiClient.put<{
+      user_skills: UserSkill[];
+      message: string;
+    }>("/api/my/skills", { skill_ids: skillIds });
+    return data.user_skills;
   },
 
   async deleteMySkill(id: number): Promise<MessageResponse> {
