@@ -23,6 +23,7 @@ import {
   FileText as FileTextIcon,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { BrandLogo } from "@/components/layout/brand-logo";
@@ -125,6 +126,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          {isAuthenticated && user ? <NotificationBell /> : null}
 
           {isAuthenticated && user ? (
             <>
