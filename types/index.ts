@@ -375,13 +375,29 @@ export interface Mentorship {
 
 // ── Messaging ──────────────────────────────────────────────────────────────────
 
+export interface ConversationParticipantSummary {
+  id: number;
+  full_name: string;
+  avatar_url: string | null;
+  role: UserRole;
+}
+
 export interface Conversation {
   id: number;
-  participant_one_id: number;
-  participant_two_id: number;
-  participant_one: User | null;
-  participant_two: User | null;
+  application_id: number;
+  employer_id: number;
+  seeker_id: number;
   created_at: string | null;
+  application?: Application | null;
+  other_party?: ConversationParticipantSummary | null;
+  job_title?: string | null;
+  last_message?: Message | null;
+  unread_count?: number;
+}
+
+export interface ConversationDetail {
+  conversation: Conversation;
+  messages: Message[];
 }
 
 export interface Message {
@@ -389,8 +405,19 @@ export interface Message {
   conversation_id: number;
   sender_id: number;
   body: string;
-  is_read: boolean;
+  read_at: string | null;
   created_at: string | null;
+}
+
+export interface SendMessagePayload {
+  body: string;
+}
+
+export interface ReportDetail {
+  report: Report;
+  conversation?: Conversation | null;
+  messages?: Message[];
+  reported_message?: Message | null;
 }
 
 // ── Communities ────────────────────────────────────────────────────────────────
@@ -785,15 +812,6 @@ export interface CreateSessionPayload {
   notes?: string;
 }
 
-export interface CreateConversationPayload {
-  user_id: number;
-}
-
-export interface SendMessagePayload {
-  body: string;
-}
-
-export interface CreateCommunityPayload {
   name: string;
   type?: CommunityType;
   description?: string;
