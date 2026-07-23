@@ -52,7 +52,9 @@ export interface User {
   notify_via: NotifyVia | null;
   education_level: EducationLevel | null;
   resume_url: string | null;
+  resume_public?: boolean;
   avatar_url: string | null;
+  username?: string | null;
   is_active: boolean;
   created_at: string | null;
   skills?: UserSkill[];
@@ -141,6 +143,9 @@ export interface Job {
   skill_ids?: number[];
   match_score?: number;
   matched_skills?: string[];
+  skill_gap?: { id: number; name: string | null }[];
+  required_skills_count?: number;
+  matched_skills_count?: number;
 }
 
 export interface ApplicationStatusLog {
@@ -319,10 +324,36 @@ export interface Notification {
   id: number;
   user_id: number;
   type: string;
+  title?: string | null;
+  body?: string | null;
   message: string;
+  link?: string | null;
   link_url: string | null;
   is_read: boolean;
+  read_at?: string | null;
   created_at: string | null;
+}
+
+export interface NotificationsListResponse {
+  notifications: Notification[];
+  unread_count: number;
+}
+
+export interface PublicSeekerProfile {
+  username: string;
+  full_name: string;
+  bio: string | null;
+  location: string | null;
+  avatar_url: string | null;
+  education_level: EducationLevel | null;
+  skills: {
+    id: number;
+    name: string;
+    level: string;
+    verified: boolean;
+  }[];
+  resume_url: string | null;
+  resume_public: boolean;
 }
 
 // ── Mentorship ───────────────────────────────────────────────────────────────
@@ -754,7 +785,9 @@ export interface UpdateProfilePayload {
   phone?: string;
   education_level?: EducationLevel | null;
   resume_url?: string;
+  resume_public?: boolean;
   avatar_url?: string;
+  username?: string;
   password?: string;
 }
 
