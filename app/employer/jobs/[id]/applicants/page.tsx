@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Download, FileText, User } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Download, FileText, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { ScheduleInterviewForm } from "@/components/interview-scheduling";
@@ -17,6 +17,7 @@ import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { PageHeader } from "@/app/employer/_components/page-header";
 import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
+import conversationsService from "@/services/conversations";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
 import type { Application, Job } from "@/types";
@@ -161,7 +162,21 @@ function ApplicantRow({
   application: Application;
   onUpdate: (updated: Application) => void;
 }) {
+  const router = useRouter();
   const seeker = application.seeker;
+  const [openingMessage, setOpeningMessage] = useState(false);
+
+  const openMessage = async () => {
+    setOpeningMessage(true);
+    try {
+      const conversation = await conversationsService.createForApplication(application.id);
+      router.push(`/messages/${conversation.id}`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setOpeningMessage(false);
+    }
+  };
 
   return (
     <Card className="border-default bg-surface-card">
@@ -195,6 +210,16 @@ function ApplicantRow({
               </p>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                loading={openingMessage}
+                onClick={openMessage}
+              >
+                <Mail className="h-3.5 w-3.5" />
+                Message
+              </Button>
               {seeker?.id && (
                 <Link
                   href={`/employer/candidates/${seeker.id}`}
