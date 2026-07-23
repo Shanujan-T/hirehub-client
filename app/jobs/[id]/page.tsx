@@ -279,6 +279,37 @@ export default function JobDetailPage() {
                     )}
                   </div>
                 )}
+
+                {!canApply && (
+                  <p className="text-subtle pt-1 text-sm">
+                    This job is {formatLabel(job.status)} and is no longer accepting applications.
+                  </p>
+                )}
+
+                {isAuthenticated &&
+                user?.role === "seeker" &&
+                job.skill_gap &&
+                job.skill_gap.length > 0 &&
+                (job.required_skills_count ?? 0) > 0 ? (
+                  <div className="rounded-xl border border-default bg-surface-muted px-4 py-3 text-sm">
+                    <p className="text-heading">
+                      You have {job.matched_skills_count ?? 0} of{" "}
+                      {job.required_skills_count} required skills — missing:{" "}
+                      {job.skill_gap
+                        .map((s) => s.name)
+                        .filter(Boolean)
+                        .join(", ")}
+                      .
+                    </p>
+                    <p className="text-subtle mt-1">
+                      You can still apply.{" "}
+                      <Link href="/profile" className="text-[var(--brand-blue)] hover:underline">
+                        Add skills on your profile
+                      </Link>{" "}
+                      to strengthen your match.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <Card>
