@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/card";
 import { Select } from "@/components/ui/form";
 import { ImageUpload } from "@/components/image-upload";
+import { SkillTagInput } from "@/components/skill-tag-input";
 import catalogService from "@/services/catalog";
 import { EXPERIENCE_LEVELS, JOB_TYPES } from "@/lib/constants";
 import { formatLabel, resolveMediaUrl } from "@/lib/utils";
@@ -58,8 +59,10 @@ export function JobForm({
   submitLabel,
   onCancel,
 }: JobFormProps) {
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [loadingSkills, setLoadingSkills] = useState(true);
+  const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(
+    Boolean(defaultValues?.skill_ids?.length),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -68,7 +71,6 @@ export function JobForm({
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<JobFormValues>({
@@ -87,8 +89,6 @@ export function JobForm({
       ...defaultValues,
     },
   });
-
-  const selectedSkillIds = watch("skill_ids") ?? [];
 
   useEffect(() => {
     if (imageFile) {
@@ -116,24 +116,25 @@ export function JobForm({
   };
 
   useEffect(() => {
+    const initialIds = defaultValues?.skill_ids ?? [];
+    if (!initialIds.length) return;
+
     catalogService
       .listSkills()
-      .then(setSkills)
+      .then((catalog) => {
+        setSelectedSkills(catalog.filter((skill) => initialIds.includes(skill.id)));
+      })
       .catch((err) => toast.error(getApiErrorMessage(err)))
       .finally(() => setLoadingSkills(false));
-  }, []);
+  }, [defaultValues?.skill_ids]);
 
-  const toggleSkill = (skillId: number) => {
-    const current = selectedSkillIds;
-    if (current.includes(skillId)) {
-      setValue(
-        "skill_ids",
-        current.filter((id) => id !== skillId),
-        { shouldValidate: true },
-      );
-    } else {
-      setValue("skill_ids", [...current, skillId], { shouldValidate: true });
-    }
+  const handleSkillsChange = (nextSkills: Skill[]) => {
+    setSelectedSkills(nextSkills);
+    setValue(
+      "skill_ids",
+      nextSkills.map((skill) => skill.id),
+      { shouldValidate: true },
+    );
   };
 
   const handleFormSubmit = async (values: JobFormValues) => {
@@ -244,28 +245,12 @@ export function JobForm({
       <FormGroup label="Required skills">
         {loadingSkills ? (
           <LoadingState message="Loading skills..." />
-        ) : skills.length === 0 ? (
-          <p className="text-subtle text-sm">No skills available in catalog.</p>
         ) : (
-          <div className="flex flex-wrap gap-2 rounded-xl border border-default bg-surface-card p-4">
-            {skills.map((skill) => {
-              const selected = selectedSkillIds.includes(skill.id);
-              return (
-                <button
-                  key={skill.id}
-                  type="button"
-                  onClick={() => toggleSkill(skill.id)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    selected
-                      ? "brand-gradient text-white shadow-sm"
-                      : "border border-default bg-surface-muted text-subtle hover:text-heading"
-                  }`}
-                >
-                  {skill.name}
-                </button>
-              );
-            })}
-          </div>
+          <SkillTagInput
+            value={selectedSkills}
+            onChange={handleSkillsChange}
+            placeholder="Search required skills…"
+          />
         )}
       </FormGroup>
 
