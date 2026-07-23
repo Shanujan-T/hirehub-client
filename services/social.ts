@@ -19,8 +19,9 @@ import type {
   MentorshipSession,
   MentorProfile,
   MessageResponse,
-  Notification,
+  NotificationsListResponse,
   NotificationsQueryParams,
+  PublicSeekerProfile,
   ReferralsQueryParams,
   SavedJob,
   SavedSearch,
@@ -43,12 +44,15 @@ export const socialService = {
 
   async getNotifications(
     params?: NotificationsQueryParams,
-  ): Promise<Notification[]> {
-    const { data } = await apiClient.get<{ notifications: Notification[] }>(
+  ): Promise<NotificationsListResponse> {
+    const { data } = await apiClient.get<NotificationsListResponse>(
       "/api/my/notifications",
       { params },
     );
-    return data.notifications;
+    return {
+      notifications: data.notifications ?? [],
+      unread_count: data.unread_count ?? 0,
+    };
   },
 
   async markNotificationRead(id: number): Promise<MessageResponse> {
@@ -60,9 +64,16 @@ export const socialService = {
 
   async markAllNotificationsRead(): Promise<MessageResponse> {
     const { data } = await apiClient.patch<MessageResponse>(
-      "/api/my/notifications/read-all",
+      "/api/notifications/read-all",
     );
     return data;
+  },
+
+  async getPublicProfile(username: string): Promise<PublicSeekerProfile> {
+    const { data } = await apiClient.get<{ profile: PublicSeekerProfile }>(
+      `/api/public/u/${encodeURIComponent(username)}`,
+    );
+    return data.profile;
   },
 
   // ── Mentorship ─────────────────────────────────────────────────────────────
