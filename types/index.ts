@@ -463,6 +463,27 @@ export interface JobReferral {
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 
+export interface OnboardingChecklistItem {
+  key: string;
+  label: string;
+  href: string;
+  completed: boolean;
+}
+
+export interface SeekerStats {
+  applications_sent: number;
+  jobs_saved: number;
+  communities_joined: number;
+}
+
+export interface ActivityItem {
+  id: number;
+  type: string;
+  description: string;
+  application_id?: number;
+  created_at: string | null;
+}
+
 export interface SeekerDashboard {
   role: "seeker";
   applications_by_status: Record<string, number>;
@@ -470,6 +491,7 @@ export interface SeekerDashboard {
   recommended_jobs: Job[];
   profile_completion_score?: number;
   badges?: string[];
+  onboarding_checklist?: OnboardingChecklistItem[];
 }
 
 export interface SalaryInsight {
@@ -589,6 +611,8 @@ export interface JobsQueryParams {
   job_type?: JobType;
   experience_level?: ExperienceLevel;
   status?: JobStatus;
+  sort?: "recent" | "most_applied";
+  limit?: number;
   min_salary?: number;
   page?: number;
   per_page?: number;
