@@ -2,24 +2,30 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Briefcase, FileText, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Briefcase, Bookmark, FileText, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { JobCard } from "@/components/cards/index";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/shared";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
 import dashboardService from "@/services/dashboard";
 import catalogService from "@/services/catalog";
+import savedSearchesService from "@/services/saved-searches";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatDate } from "@/lib/utils";
-import type { SeekerDashboard } from "@/types";
+import { formatDate, formatLabel } from "@/lib/utils";
+import type { SavedSearch, SeekerDashboard } from "@/types";
 
 function SeekerDashboardContent() {
+  const router = useRouter();
   const [data, setData] = useState<SeekerDashboard | null>(null);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasSkills, setHasSkills] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     catalogService
@@ -29,14 +35,38 @@ function SeekerDashboardContent() {
   }, []);
 
   useEffect(() => {
-    dashboardService
-      .get()
-      .then((dashboard) => {
+    Promise.all([dashboardService.get(), savedSearchesService.list()])
+      .then(([dashboard, searches]) => {
         if (dashboard.role === "seeker") setData(dashboard);
+        setSavedSearches(searches);
       })
       .catch((err) => toast.error(getApiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
+
+  const deleteSavedSearch = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await savedSearchesService.delete(id);
+      setSavedSearches((prev) => prev.filter((row) => row.id !== id));
+      toast.success("Saved search removed");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const openSavedSearch = (search: SavedSearch) => {
+    const params = new URLSearchParams();
+    const filters = search.filters ?? {};
+    const keyword = filters.keyword || search.keywords;
+    if (keyword) params.set("q", keyword);
+    if (filters.location || search.location) params.set("location", filters.location || search.location || "");
+    if (filters.category || search.category) params.set("category", filters.category || search.category || "");
+    if (filters.job_type || search.job_type) params.set("job_type", filters.job_type || search.job_type || "");
+    router.push(`/jobs?${params.toString()}`);
+  };
 
   if (loading) return <LoadingState message="Loading dashboard..." />;
   if (!data) {
@@ -114,6 +144,65 @@ function SeekerDashboardContent() {
           </div>
         ))}
       </div>
+
+      <Card className="glass-card overflow-hidden border-default">
+        <CardHeader className="border-b border-default bg-[color-mix(in_srgb,var(--brand-blue)_8%,var(--surface-card))]">
+          <CardTitle className="flex items-center gap-2">
+            <Bookmark className="h-5 w-5" />
+            Saved searches
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {savedSearches.length ? (
+            savedSearches.map((search) => (
+              <div
+                key={search.id}
+                className="flex items-start justify-between gap-3 rounded-xl border border-default p-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => openSavedSearch(search)}
+                  className="text-left"
+                >
+                  <p className="font-semibold text-heading">
+                    {search.name || search.keywords || search.category || "Saved search"}
+                  </p>
+                  <p className="text-subtle mt-1 text-xs">
+                    {[
+                      search.keywords,
+                      search.location,
+                      search.job_type ? formatLabel(search.job_type) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "Custom filters"}
+                  </p>
+                </button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  loading={deletingId === search.id}
+                  onClick={() => deleteSavedSearch(search.id)}
+                  aria-label="Delete saved search"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))
+          ) : (
+            <EmptyState
+              icon={Bookmark}
+              title="No saved searches yet"
+              description="Save a job search from the browse page to get alerts."
+              action={
+                <Link href="/jobs" className="text-sm font-semibold text-[var(--brand-blue)]">
+                  Browse jobs →
+                </Link>
+              }
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="glass-card overflow-hidden border-default">
         <CardHeader className="border-b border-default bg-[color-mix(in_srgb,var(--brand-magenta)_8%,var(--surface-card))]">
