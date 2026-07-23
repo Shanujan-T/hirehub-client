@@ -20,6 +20,11 @@
 }
 
 :root {
+  --font-inter: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-plus-jakarta: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+
   --brand-navy: #041b5f;
   --brand-navy-mid: #133099;
   --brand-blue: #0c44b7;

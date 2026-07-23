@@ -18,6 +18,7 @@ import type {
   Mentorship,
   MentorshipSession,
   MentorProfile,
+  MessageResponse,
   Notification,
   NotificationsQueryParams,
   ReferralsQueryParams,

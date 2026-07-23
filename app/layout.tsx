@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/providers/auth-provider";
 import { Footer, Navbar } from "@/components/layout/main-layout";
@@ -7,18 +6,6 @@ import { MeshBackground } from "@/components/layout/mesh-background";
 import { ThemeInitScript } from "@/components/theme/theme-init";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -34,11 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${inter.variable} ${plusJakarta.variable}`}
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ThemeInitScript />
       </head>

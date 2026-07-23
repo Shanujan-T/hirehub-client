@@ -812,6 +812,7 @@ export interface CreateSessionPayload {
   notes?: string;
 }
 
+export interface CreateCommunityPayload {
   name: string;
   type?: CommunityType;
   description?: string;
