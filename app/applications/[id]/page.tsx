@@ -41,6 +41,13 @@ function ApplicationDetailContent() {
   }, [id]);
 
   const withdraw = async () => {
+    if (
+      !window.confirm(
+        "Withdraw this application? Employers will see it as withdrawn, and you may not be able to re-apply.",
+      )
+    ) {
+      return;
+    }
     setWithdrawing(true);
     try {
       const updated = await applicationsService.withdraw(id);
@@ -125,7 +132,7 @@ function ApplicationDetailContent() {
             </Button>
             {["pending", "shortlisted"].includes(app.status) && (
               <Button variant="destructive" onClick={withdraw} disabled={withdrawing}>
-                {withdrawing ? "Withdrawing..." : "Withdraw"}
+                {withdrawing ? "Withdrawing..." : "Withdraw application"}
               </Button>
             )}
           </div>
