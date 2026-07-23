@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Download, ArrowLeft } from "lucide-react";
+import { Download, ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { ApplicationPipeline } from "@/components/application-pipeline";
@@ -114,6 +114,12 @@ function ApplicationDetailContent() {
             </div>
           )}
           <div className="flex flex-wrap gap-3 pt-2">
+            <Link href={`/applications/${id}/messages`} className="inline-flex">
+              <Button variant="secondary" type="button">
+                <Mail className="h-4 w-4" />
+                Message employer
+              </Button>
+            </Link>
             <Button variant="outline" onClick={downloadPdf}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
