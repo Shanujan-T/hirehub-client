@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Download, FileText, Mail, User } from "lucide-react";
@@ -19,7 +19,7 @@ import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
 import conversationsService from "@/services/conversations";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { Application, Job } from "@/types";
 
 function ApplicantActions({
@@ -157,14 +157,19 @@ function ApplicantActions({
 
 function ApplicantRow({
   application,
+  selected,
+  onToggle,
   onUpdate,
 }: {
   application: Application;
+  selected: boolean;
+  onToggle: (id: number) => void;
   onUpdate: (updated: Application) => void;
 }) {
   const router = useRouter();
   const seeker = application.seeker;
   const [openingMessage, setOpeningMessage] = useState(false);
+  const selectable = ["pending", "shortlisted"].includes(application.status);
 
   const openMessage = async () => {
     setOpeningMessage(true);
@@ -179,9 +184,20 @@ function ApplicantRow({
   };
 
   return (
-    <Card className="border-default bg-surface-card">
+    <Card className={cn("border-default bg-surface-card", selected && "ring-1 ring-[var(--brand-blue)]/40")}>
       <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex gap-4">
+          {selectable ? (
+            <input
+              type="checkbox"
+              className="mt-2 h-4 w-4 accent-[var(--brand-blue)]"
+              checked={selected}
+              onChange={() => onToggle(application.id)}
+              aria-label={`Select ${seeker?.full_name ?? "applicant"}`}
+            />
+          ) : (
+            <div className="mt-2 w-4" />
+          )}
           <Avatar
             src={seeker?.avatar_url}
             name={seeker?.full_name ?? "Candidate"}
@@ -258,8 +274,18 @@ function JobApplicantsContent() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState<"shortlisted" | "rejected" | null>(null);
+
+  const selectableIds = useMemo(
+    () =>
+      applications
+        .filter((app) => ["pending", "shortlisted"].includes(app.status))
+        .map((app) => app.id),
+    [applications],
+  );
 
   const fetchData = useCallback(async () => {
     if (!jobId || Number.isNaN(jobId)) {
@@ -274,6 +300,7 @@ function JobApplicantsContent() {
       ]);
       setJob(jobData);
       setApplications(apps);
+      setSelectedIds([]);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -289,6 +316,45 @@ function JobApplicantsContent() {
     setApplications((prev) =>
       prev.map((app) => (app.id === updated.id ? updated : app)),
     );
+  };
+
+  const toggleOne = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const allSelected =
+    selectableIds.length > 0 && selectableIds.every((id) => selectedIds.includes(id));
+
+  const toggleAll = () => {
+    setSelectedIds(allSelected ? [] : selectableIds);
+  };
+
+  const runBulk = async (status: "shortlisted" | "rejected") => {
+    if (!selectedIds.length) return;
+    if (
+      status === "rejected" &&
+      !window.confirm(`Reject ${selectedIds.length} selected application(s)?`)
+    ) {
+      return;
+    }
+    setBulkLoading(status);
+    try {
+      const updated = await jobsService.bulkUpdateApplicants(jobId, {
+        application_ids: selectedIds,
+        status,
+      });
+      setApplications((prev) =>
+        prev.map((app) => updated.find((u) => u.id === app.id) ?? app),
+      );
+      setSelectedIds([]);
+      toast.success(`${updated.length} application(s) ${status}.`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setBulkLoading(null);
+    }
   };
 
   const handleExport = async () => {
@@ -350,13 +416,57 @@ function JobApplicantsContent() {
             {applications.length} applicant{applications.length !== 1 ? "s" : ""}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-subtle text-sm">
             Shortlist promising candidates, then accept or reject. Accepted and
             rejected applications are final.
           </p>
+          {selectableIds.length > 0 ? (
+            <label className="inline-flex items-center gap-2 text-sm text-heading">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--brand-blue)]"
+                checked={allSelected}
+                onChange={toggleAll}
+              />
+              Select all actionable ({selectableIds.length})
+            </label>
+          ) : null}
         </CardContent>
       </Card>
+
+      {selectedIds.length > 0 ? (
+        <div className="sticky top-20 z-20 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-default bg-surface-card px-4 py-3 shadow-sm">
+          <p className="text-sm font-medium text-heading">
+            {selectedIds.length} selected
+          </p>
+          <Button
+            size="sm"
+            loading={bulkLoading === "shortlisted"}
+            disabled={Boolean(bulkLoading)}
+            onClick={() => void runBulk("shortlisted")}
+          >
+            Shortlist
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            loading={bulkLoading === "rejected"}
+            disabled={Boolean(bulkLoading)}
+            onClick={() => void runBulk("rejected")}
+          >
+            Reject
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={Boolean(bulkLoading)}
+            onClick={() => setSelectedIds([])}
+          >
+            Clear
+          </Button>
+        </div>
+      ) : null}
 
       {applications.length === 0 ? (
         <EmptyState
@@ -370,6 +480,8 @@ function JobApplicantsContent() {
             <ApplicantRow
               key={application.id}
               application={application}
+              selected={selectedIds.includes(application.id)}
+              onToggle={toggleOne}
               onUpdate={handleApplicationUpdate}
             />
           ))}
