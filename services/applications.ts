@@ -2,8 +2,13 @@ import apiClient from "@/lib/api-client";
 import type {
   Application,
   CreateApplicationPayload,
+  Interview,
   MessageResponse,
 } from "@/types";
+
+export interface RejectApplicationPayload {
+  rejection_reason?: string;
+}
 
 export const applicationsService = {
   async list(): Promise<Application[]> {
@@ -58,11 +63,11 @@ export const applicationsService = {
     return data.application;
   },
 
-  async reject(id: number): Promise<Application> {
+  async reject(id: number, payload?: RejectApplicationPayload): Promise<Application> {
     const { data } = await apiClient.patch<{
       application: Application;
       message: string;
-    }>(`/api/applications/${id}/reject`);
+    }>(`/api/applications/${id}/reject`, payload ?? {});
     return data.application;
   },
 
@@ -79,6 +84,36 @@ export const applicationsService = {
       `/api/applications/${id}/history`,
     );
     return data.history;
+  },
+
+  async getInterview(applicationId: number): Promise<Interview | null> {
+    const { data } = await apiClient.get<{ interview: Interview | null }>(
+      `/api/applications/${applicationId}/interview`,
+    );
+    return data.interview;
+  },
+
+  async proposeInterview(applicationId: number, slots: string[]): Promise<Interview> {
+    const { data } = await apiClient.post<{ interview: Interview; message: string }>(
+      `/api/applications/${applicationId}/interview`,
+      { slots },
+    );
+    return data.interview;
+  },
+
+  async selectInterviewSlot(interviewId: number, selectedSlot: string): Promise<Interview> {
+    const { data } = await apiClient.patch<{ interview: Interview; message: string }>(
+      `/api/interviews/${interviewId}/select`,
+      { selected_slot: selectedSlot },
+    );
+    return data.interview;
+  },
+
+  async cancelInterview(interviewId: number): Promise<Interview> {
+    const { data } = await apiClient.patch<{ interview: Interview; message: string }>(
+      `/api/interviews/${interviewId}/cancel`,
+    );
+    return data.interview;
   },
 
   async exportCsv(): Promise<void> {
