@@ -3,7 +3,7 @@
 
 
 import { useEffect, useState } from "react";
-
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ import { PortalLayout } from "@/components/layout/main-layout";
 
 import { ResumeUpload } from "@/components/resume-upload";
 import { AvatarUpload } from "@/components/avatar-upload";
+import { SkillTagInput } from "@/components/skill-tag-input";
 
 import { Button } from "@/components/ui/button";
 
@@ -39,8 +40,9 @@ import { getApiErrorMessage } from "@/lib/api-client";
 
 import { resolveMediaUrl, formatLabel } from "@/lib/utils";
 
-import type { EducationLevel, NotifyVia } from "@/types";
+import type { EducationLevel, NotifyVia, Skill } from "@/types";
 import dashboardService from "@/services/dashboard";
+import catalogService from "@/services/catalog";
 
 
 
@@ -72,6 +74,13 @@ function ProfileContent() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingNotify, setSavingNotify] = useState(false);
   const [badges, setBadges] = useState<string[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<Skill[]>([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+  const [savingSkills, setSavingSkills] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState("");
+  const [savingUsername, setSavingUsername] = useState(false);
+  const [resumePublic, setResumePublic] = useState(false);
+  const [savingResumePublic, setSavingResumePublic] = useState(false);
 
   const {
 
@@ -107,10 +116,40 @@ function ProfileContent() {
 
       setNotifyVia((user.notify_via as NotifyVia) || "email");
       setWhatsappNumber(user.whatsapp_number ?? "");
+      setResumePublic(Boolean(user.resume_public));
+      setUsernameDraft(user.username ?? "");
 
     }
 
   }, [user, reset]);
+
+  const saveUsername = async () => {
+    setSavingUsername(true);
+    try {
+      await updateProfile({ username: usernameDraft.trim().toLowerCase() });
+      await refreshProfile();
+      toast.success("Public username saved");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingUsername(false);
+    }
+  };
+
+  const saveResumePublic = async (next: boolean) => {
+    setSavingResumePublic(true);
+    setResumePublic(next);
+    try {
+      await updateProfile({ resume_public: next });
+      await refreshProfile();
+      toast.success(next ? "Resume is public on your profile" : "Resume hidden from public profile");
+    } catch (err) {
+      setResumePublic(!next);
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingResumePublic(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.role !== "seeker") return;
@@ -122,6 +161,22 @@ function ProfileContent() {
         }
       })
       .catch(() => undefined);
+  }, [user?.role]);
+
+  useEffect(() => {
+    if (user?.role !== "seeker") return;
+    setLoadingSkills(true);
+    catalogService
+      .listMySkills()
+      .then((rows) => {
+        setSelectedSkills(
+          rows
+            .map((row) => row.skill)
+            .filter((skill): skill is Skill => Boolean(skill)),
+        );
+      })
+      .catch((err) => toast.error(getApiErrorMessage(err)))
+      .finally(() => setLoadingSkills(false));
   }, [user?.role]);
 
 
@@ -228,6 +283,18 @@ function ProfileContent() {
 
   };
 
+  const saveSkills = async () => {
+    setSavingSkills(true);
+    try {
+      await catalogService.replaceMySkills(selectedSkills.map((skill) => skill.id));
+      toast.success("Skills updated");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingSkills(false);
+    }
+  };
+
   const saveNotificationPrefs = async () => {
     setSavingNotify(true);
     try {
@@ -310,6 +377,90 @@ function ProfileContent() {
         </CardContent>
 
       </Card>
+
+      {user.role === "seeker" && (
+        <Card className="border-default bg-surface-card">
+          <CardHeader>
+            <CardTitle>Public profile link</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-subtle text-sm">
+              Share a read-only profile page. Your email, phone, and applications stay private.
+            </p>
+            {user.username ? (
+              <div className="space-y-3">
+                <p className="text-sm text-heading">
+                  Your URL:{" "}
+                  <Link
+                    href={`/u/${user.username}`}
+                    className="font-medium text-[var(--brand-blue)] hover:underline"
+                  >
+                    /u/{user.username}
+                  </Link>
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const url = `${window.location.origin}/u/${user.username}`;
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      toast.success("Public profile link copied");
+                    } catch {
+                      toast.error("Could not copy link");
+                    }
+                  }}
+                >
+                  Copy link
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Label htmlFor="public-username">Choose your public URL</Label>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-subtle inline-flex items-center text-sm">/u/</span>
+                  <Input
+                    id="public-username"
+                    value={usernameDraft}
+                    onChange={(e) =>
+                      setUsernameDraft(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))
+                    }
+                    placeholder="jane-doe"
+                    className="max-w-xs"
+                    maxLength={30}
+                  />
+                  <Button
+                    type="button"
+                    disabled={savingUsername || usernameDraft.length < 3}
+                    onClick={saveUsername}
+                  >
+                    {savingUsername ? "Saving..." : "Save username"}
+                  </Button>
+                </div>
+                <p className="text-subtle text-xs">
+                  3–30 characters. Letters, numbers, hyphens, underscores. Can only be set once.
+                </p>
+              </div>
+            )}
+            <label className="flex items-start gap-3 text-sm text-heading">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-[var(--brand-blue)]"
+                checked={resumePublic}
+                disabled={savingResumePublic}
+                onChange={(e) => void saveResumePublic(e.target.checked)}
+              />
+              <span>
+                Make my resume link visible on my public profile
+                <span className="text-subtle mt-0.5 block text-xs">
+                  Off by default. Only your public page visitors can see it when enabled.
+                </span>
+              </span>
+            </label>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-default bg-surface-card">
 
@@ -398,6 +549,36 @@ function ProfileContent() {
         </CardContent>
 
       </Card>
+
+      {user.role === "seeker" && (
+        <Card className="border-default bg-surface-card">
+          <CardHeader>
+            <CardTitle>Skills</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-subtle text-sm">
+              Add skills to improve job recommendations. Search existing skills or create new ones.
+            </p>
+            {loadingSkills ? (
+              <LoadingState message="Loading skills..." />
+            ) : (
+              <SkillTagInput
+                value={selectedSkills}
+                onChange={setSelectedSkills}
+                placeholder="Search skills (e.g. React, Python)…"
+              />
+            )}
+            {selectedSkills.length === 0 && !loadingSkills ? (
+              <p className="text-subtle text-sm">
+                Add your first skill to get better job matches.
+              </p>
+            ) : null}
+            <Button type="button" disabled={savingSkills || loadingSkills} onClick={saveSkills}>
+              {savingSkills ? "Saving..." : "Save skills"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {user.role === "seeker" && (
         <Card className="border-default bg-surface-card">
