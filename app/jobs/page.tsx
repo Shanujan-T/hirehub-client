@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Briefcase } from "lucide-react";
+import { Bookmark, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { SearchBar } from "@/components/search/search-bar";
 import { JobCard } from "@/components/cards";
@@ -10,13 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
+import { useAuth } from "@/providers/auth-provider";
 import jobsService from "@/services/jobs";
+import savedSearchesService from "@/services/saved-searches";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { PAGE_HEADER_BAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { EXPERIENCE_LEVELS, JOB_TYPES } from "@/lib/constants";
 import { formatLabel, formatSalary } from "@/lib/utils";
-import type { Job, JobsQueryParams, SalaryInsight } from "@/types";
+import type { Job, JobsQueryParams, JobType, SalaryInsight } from "@/types";
 
 function SalaryInsightsPanel() {
   const searchParams = useSearchParams();
@@ -142,6 +144,79 @@ function JobFiltersPanel() {
   );
 }
 
+function SaveSearchPanel() {
+  const searchParams = useSearchParams();
+  const { isAuthenticated, user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  if (!isAuthenticated || user?.role !== "seeker") return null;
+
+  const filters = {
+    keyword: searchParams.get("q") || undefined,
+    location: searchParams.get("location") || undefined,
+    category: searchParams.get("category") || undefined,
+    job_type: (searchParams.get("job_type") as JobType | null) || undefined,
+  };
+
+  const hasCriteria = Object.values(filters).some(Boolean);
+
+  const saveSearch = async () => {
+    if (!hasCriteria) {
+      toast.error("Apply at least one filter or search term before saving.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await savedSearchesService.create({
+        name: name.trim() || undefined,
+        filters,
+        keywords: filters.keyword,
+        category: filters.category,
+        location: filters.location,
+        job_type: filters.job_type,
+      });
+      toast.success("Search saved — you'll get alerts for matching jobs.");
+      setOpen(false);
+      setName("");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-2xl border border-default bg-surface-card p-4">
+      {!open ? (
+        <Button type="button" variant="outline" className="w-full" onClick={() => setOpen(true)}>
+          <Bookmark className="h-4 w-4" />
+          Save this search
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <Label htmlFor="saved-search-name">Search name (optional)</Label>
+          <Input
+            id="saved-search-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Remote Data Analyst"
+          />
+          <div className="flex gap-2">
+            <Button type="button" className="flex-1" loading={saving} onClick={saveSearch}>
+              Save alerts
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function JobsPage() {
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -192,6 +267,9 @@ function JobsPage() {
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
           <aside>
             <JobFiltersPanel />
+            <Suspense fallback={null}>
+              <SaveSearchPanel />
+            </Suspense>
             <SalaryInsightsPanel />
           </aside>
 

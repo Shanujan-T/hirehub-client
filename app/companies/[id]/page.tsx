@@ -192,6 +192,14 @@ export default function CompanyDetailPage() {
                     </a>
                   </div>
                 )}
+                {company.avg_response_time_days != null ? (
+                  <div className="rounded-lg border border-[var(--brand-blue)]/20 bg-[color-mix(in_srgb,var(--brand-blue)_8%,var(--surface-card))] px-3 py-2">
+                    <p className="text-xs font-semibold text-[var(--brand-blue)]">
+                      Usually responds within {company.avg_response_time_days} day
+                      {company.avg_response_time_days === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           </aside>
