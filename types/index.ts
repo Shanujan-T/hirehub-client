@@ -73,6 +73,7 @@ export interface Company {
   is_verified: boolean;
   created_at: string | null;
   open_jobs_count?: number;
+  avg_response_time_days?: number | null;
   jobs?: Job[];
 }
 
@@ -145,10 +146,22 @@ export interface Job {
 export interface ApplicationStatusLog {
   id: number;
   application_id: number;
-  old_status: ApplicationStatus | null;
-  new_status: ApplicationStatus;
+  old_status: ApplicationStatus | string | null;
+  new_status: ApplicationStatus | string;
   changed_by: number;
   changed_by_name?: string | null;
+  created_at: string | null;
+}
+
+export type InterviewStatus = "proposed" | "confirmed" | "cancelled";
+
+export interface Interview {
+  id: number;
+  application_id: number;
+  proposed_by: number;
+  slots: string[];
+  selected_slot: string | null;
+  status: InterviewStatus;
   created_at: string | null;
 }
 
@@ -159,6 +172,8 @@ export interface Application {
   cover_letter: string | null;
   resume_url: string | null;
   status: ApplicationStatus;
+  rejection_reason?: string | null;
+  interview?: Interview | null;
   created_at: string | null;
   job?: Job;
   seeker?: User;
@@ -175,12 +190,22 @@ export interface SavedJob {
 export interface SavedSearch {
   id: number;
   user_id: number;
+  name: string | null;
   keywords: string | null;
   category: string | null;
   location: string | null;
   job_type: JobType | null;
   min_salary: number | null;
+  filters?: SavedSearchFilters;
   created_at: string | null;
+}
+
+export interface SavedSearchFilters {
+  keyword?: string | null;
+  location?: string | null;
+  category?: string | null;
+  job_type?: JobType | null;
+  min_salary?: number | null;
 }
 
 // ── Social / content ─────────────────────────────────────────────────────────
@@ -772,11 +797,13 @@ export interface CreateReferralPayload {
 }
 
 export interface CreateSavedSearchPayload {
+  name?: string;
   keywords?: string;
   category?: string;
   location?: string;
   job_type?: JobType;
   min_salary?: number;
+  filters?: SavedSearchFilters;
 }
 
 export interface CreateUserSkillPayload {
