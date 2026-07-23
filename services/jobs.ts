@@ -152,6 +152,21 @@ export const jobsService = {
     return data.applications;
   },
 
+  async bulkUpdateApplicants(
+    jobId: number,
+    payload: {
+      application_ids: number[];
+      status: "shortlisted" | "rejected" | "accepted";
+      rejection_reason?: string;
+    },
+  ) {
+    const { data } = await apiClient.patch<{
+      applications: import("@/types").Application[];
+      message: string;
+    }>(`/api/jobs/${jobId}/applicants/bulk-update`, payload);
+    return data.applications;
+  },
+
   async getSimilar(id: number): Promise<Job[]> {
     const { data } = await apiClient.get<{ jobs: Job[] }>(`/api/jobs/${id}/similar`);
     return data.jobs;
