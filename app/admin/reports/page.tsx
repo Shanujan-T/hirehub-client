@@ -16,17 +16,20 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/card";
+import { ConversationThread } from "@/components/conversation-thread";
 import reportsService from "@/services/reports";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { REPORT_STATUSES } from "@/lib/constants";
 import { formatDate, formatLabel } from "@/lib/utils";
-import type { Report, ReportStatus } from "@/types";
+import type { Report, ReportDetail, ReportStatus } from "@/types";
 
 function ReportsContent() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [selected, setSelected] = useState<Report | null>(null);
+  const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
   const [resolveStatus, setResolveStatus] = useState<ReportStatus>("actioned");
   const [actionTaken, setActionTaken] = useState("");
   const [resolving, setResolving] = useState(false);
@@ -49,6 +52,26 @@ function ReportsContent() {
   useEffect(() => {
     fetchReports();
   }, [fetchReports]);
+
+  useEffect(() => {
+    if (!selected) {
+      setReportDetail(null);
+      return;
+    }
+    if (
+      selected.target_type !== "conversation" &&
+      selected.target_type !== "message"
+    ) {
+      setReportDetail(null);
+      return;
+    }
+    setLoadingDetail(true);
+    reportsService
+      .getById(selected.id)
+      .then((data) => setReportDetail(data))
+      .catch((err) => toast.error(getApiErrorMessage(err)))
+      .finally(() => setLoadingDetail(false));
+  }, [selected]);
 
   async function handleResolve() {
     if (!selected) return;
@@ -118,18 +141,30 @@ function ReportsContent() {
               </AdminTableCell>
               <AdminTableCell>{formatDate(report.created_at)}</AdminTableCell>
               <AdminTableCell>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={report.status !== "open"}
-                  onClick={() => {
-                    setSelected(report);
-                    setResolveStatus("actioned");
-                    setActionTaken("");
-                  }}
-                >
-                  Resolve
-                </Button>
+                <div className="flex gap-2">
+                  {(report.target_type === "conversation" ||
+                    report.target_type === "message") && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelected(report)}
+                    >
+                      View
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={report.status !== "open"}
+                    onClick={() => {
+                      setSelected(report);
+                      setResolveStatus("actioned");
+                      setActionTaken("");
+                    }}
+                  >
+                    Resolve
+                  </Button>
+                </div>
               </AdminTableCell>
             </AdminTableRow>
           ))}
@@ -139,7 +174,11 @@ function ReportsContent() {
       <Modal
         open={Boolean(selected)}
         onClose={() => setSelected(null)}
-        title="Resolve Report"
+        title={
+          selected?.status === "open" && selected
+            ? "Resolve Report"
+            : "Report details"
+        }
       >
         {selected ? (
           <div className="space-y-4">
@@ -156,40 +195,69 @@ function ReportsContent() {
               ) : null}
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-heading">Resolution</label>
-              <Select
-                className="mt-2"
-                value={resolveStatus}
-                onChange={(e) => setResolveStatus(e.target.value as ReportStatus)}
-              >
-                {REPORT_STATUSES.filter((s) => s !== "open").map((status) => (
-                  <option key={status} value={status}>
-                    {formatLabel(status)}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {(selected.target_type === "conversation" ||
+              selected.target_type === "message") && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-heading">
+                  Reported conversation (read-only)
+                </p>
+                {loadingDetail ? (
+                  <LoadingState message="Loading conversation..." />
+                ) : reportDetail?.conversation ? (
+                  <ConversationThread
+                    conversationId={reportDetail.conversation.id}
+                    conversation={reportDetail.conversation}
+                    readOnly
+                    adminReadOnly
+                  />
+                ) : null}
+              </div>
+            )}
 
-            <div>
-              <label className="text-sm font-medium text-heading">Action taken</label>
-              <Textarea
-                className="mt-2"
-                rows={3}
-                value={actionTaken}
-                onChange={(e) => setActionTaken(e.target.value)}
-                placeholder="Describe moderation action..."
-              />
-            </div>
+            {selected.status === "open" ? (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-heading">Resolution</label>
+                  <Select
+                    className="mt-2"
+                    value={resolveStatus}
+                    onChange={(e) => setResolveStatus(e.target.value as ReportStatus)}
+                  >
+                    {REPORT_STATUSES.filter((s) => s !== "open").map((status) => (
+                      <option key={status} value={status}>
+                        {formatLabel(status)}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setSelected(null)}>
-                Cancel
-              </Button>
-              <Button loading={resolving} onClick={handleResolve}>
-                Confirm Resolution
-              </Button>
-            </div>
+                <div>
+                  <label className="text-sm font-medium text-heading">Action taken</label>
+                  <Textarea
+                    className="mt-2"
+                    rows={3}
+                    value={actionTaken}
+                    onChange={(e) => setActionTaken(e.target.value)}
+                    placeholder="Describe moderation action..."
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" onClick={() => setSelected(null)}>
+                    Cancel
+                  </Button>
+                  <Button loading={resolving} onClick={handleResolve}>
+                    Confirm Resolution
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-end">
+                <Button variant="ghost" onClick={() => setSelected(null)}>
+                  Close
+                </Button>
+              </div>
+            )}
           </div>
         ) : null}
       </Modal>

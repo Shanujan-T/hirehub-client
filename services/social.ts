@@ -9,7 +9,6 @@ import type {
   CommunityMember,
   CommunitiesQueryParams,
   CreateCommunityPayload,
-  CreateConversationPayload,
   CreateMentorshipPayload,
   CreateReferralPayload,
   CreateSavedSearchPayload,
@@ -19,15 +18,11 @@ import type {
   Mentorship,
   MentorshipSession,
   MentorProfile,
-  Message,
-  MessageResponse,
   Notification,
   NotificationsQueryParams,
   ReferralsQueryParams,
   SavedJob,
   SavedSearch,
-  SendMessagePayload,
-  Conversation,
   UpdateMemberRolePayload,
   UpdateReferralStatusPayload,
   UpsertMentorProfilePayload,
@@ -163,48 +158,7 @@ export const socialService = {
   },
 
   // ── Conversations / messages ─────────────────────────────────────────────────
-
-  async getMyConversations(): Promise<Conversation[]> {
-    const { data } = await apiClient.get<{ conversations: Conversation[] }>(
-      "/api/my/conversations",
-    );
-    return data.conversations;
-  },
-
-  async createConversation(
-    payload: CreateConversationPayload,
-  ): Promise<Conversation> {
-    const { data } = await apiClient.post<{
-      conversation: Conversation;
-      message: string;
-    }>("/api/conversations", payload);
-    return data.conversation;
-  },
-
-  async getMessages(conversationId: number): Promise<Message[]> {
-    const { data } = await apiClient.get<{ messages: Message[] }>(
-      `/api/conversations/${conversationId}/messages`,
-    );
-    return data.messages;
-  },
-
-  async sendMessage(
-    conversationId: number,
-    payload: SendMessagePayload,
-  ): Promise<Message> {
-    const { data } = await apiClient.post<{ message_obj: Message }>(
-      `/api/conversations/${conversationId}/messages`,
-      payload,
-    );
-    return data.message_obj;
-  },
-
-  async markMessageRead(messageId: number): Promise<MessageResponse> {
-    const { data } = await apiClient.patch<MessageResponse>(
-      `/api/messages/${messageId}/read`,
-    );
-    return data;
-  },
+  // Moved to services/conversations.ts (application-scoped messaging)
 
   // ── Communities ────────────────────────────────────────────────────────────
 

@@ -119,6 +119,8 @@ export const REPORT_TARGET_TYPES = [
   "user",
   "community",
   "referral",
+  "conversation",
+  "message",
 ] as const;
 
 export const REPORT_STATUSES = [

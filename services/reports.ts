@@ -3,6 +3,7 @@ import type {
   CreateReportPayload,
   MessageResponse,
   Report,
+  ReportDetail,
   ReportsQueryParams,
   ResolveReportPayload,
 } from "@/types";
@@ -24,11 +25,9 @@ export const reportsService = {
     return data.reports;
   },
 
-  async getById(id: number): Promise<Report> {
-    const { data } = await apiClient.get<{ report: Report }>(
-      `/api/reports/${id}`,
-    );
-    return data.report;
+  async getById(id: number): Promise<ReportDetail> {
+    const { data } = await apiClient.get<ReportDetail>(`/api/reports/${id}`);
+    return data;
   },
 
   async resolve(
