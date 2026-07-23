@@ -46,7 +46,7 @@ function PostsListContent() {
     <>
       <AdminPageHeader
         title="Posts"
-        description="Moderate community and feed content"
+        description="Moderate feed and group posts"
       />
 
       {loading ? (

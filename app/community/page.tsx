@@ -135,7 +135,7 @@ function CommunityFeedPage() {
       <div className={cn("border-b border-default", PAGE_HEADER_BAND)}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-10 sm:px-6 lg:px-8">
           <div>
-            <h1 className="text-heading text-3xl font-bold">Community Feed</h1>
+            <h1 className="text-heading text-3xl font-bold">Feed</h1>
             <p className="text-subtle mt-1">
               Share insights, ask questions, and connect with professionals
             </p>
@@ -163,7 +163,7 @@ function CommunityFeedPage() {
             <div className="rounded-2xl border border-default bg-surface-card p-4">
               <div className="mb-2 flex items-center gap-2">
                 <Shield className="size-4 text-[#0C44B7]" />
-                <h3 className="text-heading text-sm font-semibold">Community Guidelines</h3>
+                <h3 className="text-heading text-sm font-semibold">Feed Guidelines</h3>
               </div>
               <ul className="text-subtle space-y-2 text-xs leading-relaxed">
                 <li>Be respectful and constructive in discussions.</li>
@@ -213,7 +213,7 @@ function CommunityFeedPage() {
               description={
                 typeFilter
                   ? "Be the first to share in this category."
-                  : "Be the first to share something with the community."
+                  : "Be the first to share something on the feed."
               }
               action={
                 <Button onClick={handleNewPost}>Create a post</Button>

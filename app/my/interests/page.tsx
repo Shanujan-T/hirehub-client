@@ -68,7 +68,7 @@ function MyInterestsContent() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-extrabold text-heading">My Interests</h1>
-        <p className="text-subtle mt-1">Personalize your community feed</p>
+        <p className="text-subtle mt-1">Personalize your feed</p>
       </div>
       <Card className="border-default bg-surface-card">
         <CardContent className="flex flex-wrap gap-3 p-4">

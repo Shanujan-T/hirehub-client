@@ -32,7 +32,7 @@ import type { UserRole } from "@/types";
 const publicLinks = [
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/companies", label: "Companies", icon: Building2 },
-  { href: "/community", label: "Community", icon: MessageSquare },
+  { href: "/community", label: "Feed", icon: MessageSquare },
   { href: "/communities", label: "Communities", icon: Users },
 ];
 

@@ -207,7 +207,7 @@ function CommunityDetailPage() {
             </Card>
 
             <div>
-              <h2 className="text-heading mb-4 text-lg font-bold">Community Feed</h2>
+              <h2 className="text-heading mb-4 text-lg font-bold">Recent posts</h2>
               {feed.length === 0 ? (
                 <EmptyState
                   title="No posts in this community yet"
