@@ -52,7 +52,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (!mounted) return;
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key.toLowerCase() !== "d" || event.metaKey || event.ctrlKey || event.altKey) {
+      const key = event.key?.toLowerCase();
+      if (key !== "d" || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
       if (isTypingTarget(event.target)) return;
