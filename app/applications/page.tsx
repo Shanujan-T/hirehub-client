@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
+import { ApplicationPipeline } from "@/components/application-pipeline";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { StatusBadge } from "@/components/ui/shared";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,13 +41,21 @@ function ApplicationsContent() {
           {apps.map((app) => (
             <Link key={app.id} href={`/applications/${app.id}`}>
               <Card className="border-default bg-surface-card card-hover">
-                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
-                  <div>
-                    <p className="font-semibold text-heading">{app.job?.title ?? "Job"}</p>
-                    <p className="text-subtle text-sm">{app.job?.company?.name}</p>
-                    <p className="text-subtle mt-1 text-xs">{formatDate(app.created_at)}</p>
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-heading">{app.job?.title ?? "Job"}</p>
+                      <p className="text-subtle text-sm">{app.job?.company?.name}</p>
+                      <p className="text-subtle mt-1 text-xs">{formatDate(app.created_at)}</p>
+                    </div>
+                    <StatusBadge status={app.status} />
                   </div>
-                  <StatusBadge status={app.status} />
+                  <ApplicationPipeline application={app} compact />
+                  {app.status === "rejected" && app.rejection_reason ? (
+                    <p className="text-subtle text-xs">
+                      Feedback from employer: {app.rejection_reason}
+                    </p>
+                  ) : null}
                 </CardContent>
               </Card>
             </Link>
