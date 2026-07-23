@@ -6,9 +6,12 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Download, FileText, User } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
+import { ScheduleInterviewForm } from "@/components/interview-scheduling";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/form";
 import { Avatar, StatusBadge } from "@/components/ui/shared";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { PageHeader } from "@/app/employer/_components/page-header";
@@ -26,6 +29,8 @@ function ApplicantActions({
   onUpdate: (updated: Application) => void;
 }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const runAction = async (
     action: "shortlist" | "accept" | "reject",
@@ -39,15 +44,23 @@ function ApplicantActions({
       } else if (action === "accept") {
         updated = await applicationsService.accept(application.id);
       } else {
-        updated = await applicationsService.reject(application.id);
+        updated = await applicationsService.reject(application.id, {
+          rejection_reason: rejectionReason.trim() || undefined,
+        });
+        setShowRejectForm(false);
+        setRejectionReason("");
       }
-      onUpdate(updated);
+      onUpdate({ ...updated, interview: updated.interview ?? application.interview });
       toast.success(`Application ${label}.`);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleInterviewScheduled = (updated: Application) => {
+    onUpdate(updated);
   };
 
   const { status } = application;
@@ -61,42 +74,82 @@ function ApplicantActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {status === "pending" && (
-        <Button
-          type="button"
-          size="sm"
-          loading={loading === "shortlist"}
-          disabled={Boolean(loading)}
-          onClick={() => runAction("shortlist", "shortlisted")}
-        >
-          Shortlist
-        </Button>
-      )}
-      {(status === "pending" || status === "shortlisted") && (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          loading={loading === "accept"}
-          disabled={Boolean(loading)}
-          onClick={() => runAction("accept", "accepted")}
-        >
-          Accept
-        </Button>
-      )}
-      {(status === "pending" || status === "shortlisted") && (
-        <Button
-          type="button"
-          size="sm"
-          variant="destructive"
-          loading={loading === "reject"}
-          disabled={Boolean(loading)}
-          onClick={() => runAction("reject", "rejected")}
-        >
-          Reject
-        </Button>
-      )}
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {status === "pending" && (
+          <Button
+            type="button"
+            size="sm"
+            loading={loading === "shortlist"}
+            disabled={Boolean(loading)}
+            onClick={() => runAction("shortlist", "shortlisted")}
+          >
+            Shortlist
+          </Button>
+        )}
+        {(status === "pending" || status === "shortlisted") && (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            loading={loading === "accept"}
+            disabled={Boolean(loading)}
+            onClick={() => runAction("accept", "accepted")}
+          >
+            Accept
+          </Button>
+        )}
+        {(status === "pending" || status === "shortlisted") && !showRejectForm && (
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            disabled={Boolean(loading)}
+            onClick={() => setShowRejectForm(true)}
+          >
+            Reject
+          </Button>
+        )}
+      </div>
+
+      {showRejectForm ? (
+        <div className="space-y-2 rounded-lg border border-default bg-surface-muted p-3">
+          <Label htmlFor={`reject-reason-${application.id}`}>
+            Add a reason (optional) — visible to the candidate
+          </Label>
+          <Input
+            id={`reject-reason-${application.id}`}
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="e.g. Role filled internally"
+            maxLength={200}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              loading={loading === "reject"}
+              onClick={() => runAction("reject", "rejected")}
+            >
+              Confirm reject
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowRejectForm(false);
+                setRejectionReason("");
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <ScheduleInterviewForm application={application} onScheduled={handleInterviewScheduled} />
     </div>
   );
 }
