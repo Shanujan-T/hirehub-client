@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import type { DashboardData } from "@/types";
+import type { ActivityItem, DashboardData, SeekerStats } from "@/types";
 
 export const dashboardService = {
   async get(): Promise<DashboardData> {
@@ -7,6 +7,18 @@ export const dashboardService = {
       "/api/me/dashboard",
     );
     return data.dashboard;
+  },
+
+  async getStats(): Promise<SeekerStats> {
+    const { data } = await apiClient.get<{ stats: SeekerStats }>("/api/me/stats");
+    return data.stats;
+  },
+
+  async getActivity(): Promise<ActivityItem[]> {
+    const { data } = await apiClient.get<{ activity: ActivityItem[] }>(
+      "/api/me/activity",
+    );
+    return data.activity;
   },
 
   async exportPdf(): Promise<void> {

@@ -3,9 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Briefcase, Bookmark, FileText, Sparkles, Trash2 } from "lucide-react";
+import {
+  Briefcase,
+  Bookmark,
+  FileText,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
+import { OnboardingChecklistCard } from "@/components/dashboard/onboarding-checklist-card";
+import { ProfileCompletionCard } from "@/components/dashboard/profile-completion-card";
+import { RecentActivityCard } from "@/components/dashboard/recent-activity-card";
+import { SeekerStatCard } from "@/components/dashboard/seeker-stat-card";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { JobCard } from "@/components/cards/index";
 import { Button } from "@/components/ui/button";
@@ -13,31 +24,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/shared";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
 import dashboardService from "@/services/dashboard";
-import catalogService from "@/services/catalog";
+import jobsService from "@/services/jobs";
 import savedSearchesService from "@/services/saved-searches";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDate, formatLabel } from "@/lib/utils";
-import type { SavedSearch, SeekerDashboard } from "@/types";
+import type {
+  ActivityItem,
+  Job,
+  OnboardingChecklistItem,
+  SavedSearch,
+  SeekerDashboard,
+  SeekerStats,
+} from "@/types";
 
 function SeekerDashboardContent() {
   const router = useRouter();
   const [data, setData] = useState<SeekerDashboard | null>(null);
+  const [stats, setStats] = useState<SeekerStats | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasSkills, setHasSkills] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
-    catalogService
-      .listMySkills()
-      .then((skills) => setHasSkills(skills.length > 0))
-      .catch(() => setHasSkills(true));
-  }, []);
-
-  useEffect(() => {
-    Promise.all([dashboardService.get(), savedSearchesService.list()])
-      .then(([dashboard, searches]) => {
+    Promise.all([
+      dashboardService.get(),
+      dashboardService.getStats(),
+      dashboardService.getActivity(),
+      jobsService.list({ sort: "recent", limit: 5, status: "open" }),
+      savedSearchesService.list(),
+    ])
+      .then(([dashboard, seekerStats, seekerActivity, jobs, searches]) => {
         if (dashboard.role === "seeker") setData(dashboard);
+        setStats(seekerStats);
+        setActivity(seekerActivity);
+        setRecentJobs(jobs);
         setSavedSearches(searches);
       })
       .catch((err) => toast.error(getApiErrorMessage(err)))
@@ -62,14 +84,20 @@ function SeekerDashboardContent() {
     const filters = search.filters ?? {};
     const keyword = filters.keyword || search.keywords;
     if (keyword) params.set("q", keyword);
-    if (filters.location || search.location) params.set("location", filters.location || search.location || "");
-    if (filters.category || search.category) params.set("category", filters.category || search.category || "");
-    if (filters.job_type || search.job_type) params.set("job_type", filters.job_type || search.job_type || "");
+    if (filters.location || search.location) {
+      params.set("location", filters.location || search.location || "");
+    }
+    if (filters.category || search.category) {
+      params.set("category", filters.category || search.category || "");
+    }
+    if (filters.job_type || search.job_type) {
+      params.set("job_type", filters.job_type || search.job_type || "");
+    }
     router.push(`/jobs?${params.toString()}`);
   };
 
   if (loading) return <LoadingState message="Loading dashboard..." />;
-  if (!data) {
+  if (!data || !stats) {
     return (
       <EmptyState
         icon={Briefcase}
@@ -79,6 +107,11 @@ function SeekerDashboardContent() {
     );
   }
 
+  const completionScore = data.profile_completion_score ?? 0;
+  const checklist = data.onboarding_checklist ?? [];
+  const incompleteItems = checklist.filter((item) => !item.completed);
+  const hasSkills = checklist.find((item) => item.key === "has_skills")?.completed ?? true;
+
   return (
     <div className="space-y-8">
       <div>
@@ -87,6 +120,27 @@ function SeekerDashboardContent() {
         </p>
         <h1 className="section-title mt-1 text-3xl">Dashboard</h1>
         <p className="text-subtle mt-1">Track applications and discover recommended jobs</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <SeekerStatCard
+          label="Applications sent"
+          value={stats.applications_sent}
+          icon={FileText}
+          href="/applications"
+        />
+        <SeekerStatCard
+          label="Jobs saved"
+          value={stats.jobs_saved}
+          icon={Bookmark}
+          href="/saved-jobs"
+        />
+        <SeekerStatCard
+          label="Communities joined"
+          value={stats.communities_joined}
+          icon={Users}
+          href="/my-communities"
+        />
       </div>
 
       {!hasSkills ? (
@@ -102,48 +156,40 @@ function SeekerDashboardContent() {
         />
       ) : null}
 
-      {typeof data.profile_completion_score === "number" ? (
-        <Card className="glass-card border-default">
-          <CardContent className="space-y-3 pt-6">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-heading">Profile completion</p>
-              <span className="text-sm font-bold text-[var(--brand-blue)]">
-                {data.profile_completion_score}%
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-magenta)] transition-all"
-                style={{ width: `${data.profile_completion_score}%` }}
-              />
-            </div>
-            {data.badges?.length ? (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {data.badges.map((badge) => (
-                  <span
-                    key={badge}
-                    className="rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_12%,var(--surface-muted))] px-2.5 py-0.5 text-xs font-semibold text-heading"
-                  >
-                    {badge}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
+      <ProfileCompletionCard
+        completionScore={completionScore}
+        incompleteItems={incompleteItems}
+        badges={data.badges}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Object.entries(data.applications_by_status ?? {}).map(([status, count]) => (
-          <div key={status} className="stat-card p-5">
-            <StatusBadge status={status} />
-            <p className="mt-3 text-3xl font-extrabold text-heading">{count}</p>
-            <p className="text-subtle mt-1 text-xs font-medium uppercase tracking-wide">
-              {status.replace(/_/g, " ")}
-            </p>
-          </div>
-        ))}
-      </div>
+      <OnboardingChecklistCard items={checklist} completionScore={completionScore} />
+
+      <RecentActivityCard activity={activity} />
+
+      <Card className="glass-card overflow-hidden border-default">
+        <CardHeader className="border-b border-default bg-[color-mix(in_srgb,var(--brand-orange)_8%,var(--surface-card))]">
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            Recently posted
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 pt-4 lg:grid-cols-2">
+          {recentJobs.length ? (
+            recentJobs.map((job) => <JobCard key={job.id} job={job} />)
+          ) : (
+            <EmptyState
+              icon={Briefcase}
+              title="No open jobs yet"
+              description="Check back soon for new opportunities."
+              action={
+                <Link href="/jobs" className="text-sm font-semibold text-[var(--brand-blue)]">
+                  Browse jobs →
+                </Link>
+              }
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="glass-card overflow-hidden border-default">
         <CardHeader className="border-b border-default bg-[color-mix(in_srgb,var(--brand-blue)_8%,var(--surface-card))]">
@@ -152,18 +198,14 @@ function SeekerDashboardContent() {
             Saved searches
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 pt-4">
           {savedSearches.length ? (
             savedSearches.map((search) => (
               <div
                 key={search.id}
                 className="flex items-start justify-between gap-3 rounded-xl border border-default p-4"
               >
-                <button
-                  type="button"
-                  onClick={() => openSavedSearch(search)}
-                  className="text-left"
-                >
+                <button type="button" onClick={() => openSavedSearch(search)} className="text-left">
                   <p className="font-semibold text-heading">
                     {search.name || search.keywords || search.category || "Saved search"}
                   </p>
@@ -190,16 +232,18 @@ function SeekerDashboardContent() {
               </div>
             ))
           ) : (
-            <EmptyState
-              icon={Bookmark}
-              title="No saved searches yet"
-              description="Save a job search from the browse page to get alerts."
-              action={
-                <Link href="/jobs" className="text-sm font-semibold text-[var(--brand-blue)]">
-                  Browse jobs →
-                </Link>
-              }
-            />
+            <div className="rounded-xl border border-dashed border-default bg-surface-muted px-4 py-6 text-center">
+              <p className="text-subtle text-sm">
+                Save a search from the Jobs page to get notified when new matching jobs are
+                posted.
+              </p>
+              <Link
+                href="/jobs"
+                className="mt-3 inline-block text-sm font-semibold text-[var(--brand-blue)] hover:underline"
+              >
+                Go to Jobs →
+              </Link>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -236,7 +280,7 @@ function SeekerDashboardContent() {
             Recent applications
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 pt-4">
           {data.applications?.length ? (
             data.applications.map((app) => (
               <Link
