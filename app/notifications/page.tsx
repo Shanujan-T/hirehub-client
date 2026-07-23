@@ -9,10 +9,11 @@ import { PortalLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
+import { useAuth } from "@/providers/auth-provider";
 import socialService from "@/services/social";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatDate } from "@/lib/utils";
-import type { Notification } from "@/types";
+import { formatRelativeTime } from "@/lib/utils";
+import type { Notification, UserRole } from "@/types";
 
 function NotificationsContent() {
   const [items, setItems] = useState<Notification[]>([]);
@@ -21,7 +22,7 @@ function NotificationsContent() {
   const load = () => {
     socialService
       .getNotifications()
-      .then(setItems)
+      .then((data) => setItems(data.notifications))
       .catch((err) => toast.error(getApiErrorMessage(err)))
       .finally(() => setLoading(false));
   };
@@ -38,6 +39,21 @@ function NotificationsContent() {
     }
   };
 
+  const openItem = async (notification: Notification) => {
+    if (!notification.is_read) {
+      try {
+        await socialService.markNotificationRead(notification.id);
+        setItems((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, is_read: true } : n,
+          ),
+        );
+      } catch {
+        // navigate anyway
+      }
+    }
+  };
+
   if (loading) return <LoadingState message="Loading notifications..." />;
 
   return (
@@ -45,7 +61,7 @@ function NotificationsContent() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-extrabold text-heading">Notifications</h1>
-          <p className="text-subtle mt-1">Stay updated on your applications and matches</p>
+          <p className="text-subtle mt-1">Stay updated on applications, messages, and matches</p>
         </div>
         {items.some((n) => !n.is_read) && (
           <Button variant="outline" onClick={markAllRead}>
@@ -57,23 +73,45 @@ function NotificationsContent() {
         <EmptyState icon={Bell} title="No notifications" description="You're all caught up." />
       ) : (
         <div className="space-y-2">
-          {items.map((n) => (
-            <Card key={n.id} className={`border-default bg-surface-card ${!n.is_read ? "ring-1 ring-[var(--brand-blue)]/30" : ""}`}>
-              <CardContent className="p-4">
-                {n.link_url ? (
-                  <Link href={n.link_url} className="block">
-                    <p className="font-medium text-heading">{n.message}</p>
-                    <p className="text-subtle mt-1 text-xs">{formatDate(n.created_at)}</p>
-                  </Link>
-                ) : (
-                  <>
-                    <p className="font-medium text-heading">{n.message}</p>
-                    <p className="text-subtle mt-1 text-xs">{formatDate(n.created_at)}</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          {items.map((n) => {
+            const href = n.link || n.link_url;
+            const title = n.title || n.message;
+            const body =
+              n.body && n.body !== title
+                ? n.body
+                : n.message !== title
+                  ? n.message
+                  : null;
+            const content = (
+              <>
+                <p className="font-medium text-heading">{title}</p>
+                {body ? <p className="text-subtle mt-1 text-sm">{body}</p> : null}
+                <p className="text-subtle mt-1 text-xs">{formatRelativeTime(n.created_at)}</p>
+              </>
+            );
+            return (
+              <Card
+                key={n.id}
+                className={`border-default bg-surface-card ${!n.is_read ? "ring-1 ring-[var(--brand-blue)]/30" : ""}`}
+              >
+                <CardContent className="p-4">
+                  {href ? (
+                    <Link href={href} className="block" onClick={() => void openItem(n)}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className="block w-full text-left"
+                      onClick={() => void openItem(n)}
+                    >
+                      {content}
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
@@ -81,9 +119,12 @@ function NotificationsContent() {
 }
 
 export default function NotificationsPage() {
+  const { user } = useAuth();
+  const role = (user?.role ?? "seeker") as UserRole;
+
   return (
     <AuthenticatedRoute>
-      <PortalLayout role="seeker">
+      <PortalLayout role={role}>
         <NotificationsContent />
       </PortalLayout>
     </AuthenticatedRoute>
