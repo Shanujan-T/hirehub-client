@@ -1,5 +1,6 @@
 /** API origin for axios. Empty string = same-origin via Next.js rewrites (recommended in dev). */
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+export const API_BASE_URL = rawApiUrl.trim().replace(/\/$/, "");
 
 export const TOKEN_KEY = "hirehub_token";
 export const USER_KEY = "hirehub_user";
@@ -32,12 +33,7 @@ export const NOTIFY_VIA_OPTIONS = [
   "none",
 ] as const;
 
-export const EXPERIENCE_LEVELS = [
-  "entry",
-  "junior",
-  "mid",
-  "senior",
-] as const;
+export const EXPERIENCE_LEVELS = ["entry", "junior", "mid", "senior"] as const;
 
 export const APPLICATION_STATUSES = [
   "pending",
