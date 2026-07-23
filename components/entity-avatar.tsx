@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn, resolveMediaUrl } from "@/lib/utils";
 import {
   getEntityInitials,
@@ -31,7 +30,6 @@ export function EntityAvatar({
   className,
 }: EntityAvatarProps) {
   const src = resolveMediaUrl(imageUrl);
-  const dimension = size === "sm" ? 44 : 48;
 
   if (src) {
     return (
@@ -42,7 +40,9 @@ export function EntityAvatar({
           className,
         )}
       >
-        <Image src={src} alt={name} fill className="object-cover" sizes={`${dimension}px`} />
+        {/* Native img: uploads are stored as originals; Next/Image recompresses at low sizes/quality. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={name} className="h-full w-full object-cover" />
       </div>
     );
   }
