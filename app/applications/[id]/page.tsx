@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import { Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
+import { ApplicationPipeline } from "@/components/application-pipeline";
+import { InterviewSlotPicker } from "@/components/interview-scheduling";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { StatusHistoryTimeline } from "@/components/status-history-timeline";
 import { Button } from "@/components/ui/button";
@@ -76,6 +78,29 @@ function ApplicationDetailContent() {
         </div>
         <StatusBadge status={app.status} />
       </div>
+
+      <Card className="border-default bg-surface-card">
+        <CardHeader>
+          <CardTitle>Application progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ApplicationPipeline application={app} />
+        </CardContent>
+      </Card>
+
+      <InterviewSlotPicker application={app} onConfirmed={setApp} />
+
+      {app.status === "rejected" && app.rejection_reason ? (
+        <Card className="border-default bg-surface-muted">
+          <CardContent className="pt-6">
+            <p className="text-subtle text-sm">
+              Feedback from employer:{" "}
+              <span className="text-heading">{app.rejection_reason}</span>
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="border-default bg-surface-card">
         <CardHeader>
           <CardTitle>Application details</CardTitle>
