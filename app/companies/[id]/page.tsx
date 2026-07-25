@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Building2, ExternalLink, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { JobCard } from "@/components/cards";
+import { BackLink } from "@/components/back-link";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
@@ -13,6 +14,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth-provider";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 import type { Company } from "@/types";
 
 function formatWebsiteHref(website: string): string {
@@ -22,7 +24,7 @@ function formatWebsiteHref(website: string): string {
 export default function CompanyDetailPage() {
   const params = useParams();
   const companyId = Number(params.id);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
@@ -99,51 +101,75 @@ export default function CompanyDetailPage() {
     user?.role === "employer" &&
     user.id === company.owner_id;
   const canFollow = isAuthenticated && user?.role === "seeker" && !isOwner;
+  const showSignInToFollow = !authLoading && !isAuthenticated;
 
   return (
     <div className="bg-surface min-h-screen">
       <div className="hero-gradient border-b border-default">
-        <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="flex items-start gap-6">
-            <EntityAvatar
-              name={company.name}
-              imageUrl={company.logo_url}
-              entityId={company.id}
-              industry={company.industry}
-              variant="company"
-              className="size-20 shrink-0 rounded-2xl text-2xl"
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold text-[#FDFDFD]">{company.name}</h1>
-                {company.is_verified && (
-                  <span className="rounded-full bg-[#FDFDFD]/20 px-2.5 py-0.5 text-xs font-semibold text-[#FDFDFD]">
-                    Verified
-                  </span>
+        <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+          <BackLink
+            href="/companies"
+            label="Back to Companies"
+            variant="onDark"
+            className="mb-6"
+          />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+            <div className="flex min-w-0 flex-1 items-start gap-4 sm:gap-6">
+              <EntityAvatar
+                name={company.name}
+                imageUrl={company.logo_url}
+                entityId={company.id}
+                industry={company.industry}
+                variant="company"
+                className="size-16 shrink-0 rounded-2xl text-xl sm:size-20 sm:text-2xl"
+              />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-bold break-words text-[#FDFDFD] sm:text-3xl">
+                    {company.name}
+                  </h1>
+                  {company.is_verified && (
+                    <span className="rounded-full bg-[#FDFDFD]/20 px-2.5 py-0.5 text-xs font-semibold text-[#FDFDFD]">
+                      Verified
+                    </span>
+                  )}
+                </div>
+                {company.industry && (
+                  <p className="mt-1 text-[#FDFDFD]/80">{company.industry}</p>
+                )}
+                {company.location && (
+                  <p className="mt-2 flex items-center gap-1 text-sm text-[#FDFDFD]/70">
+                    <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />{" "}
+                    {company.location}
+                  </p>
                 )}
               </div>
-              {company.industry && (
-                <p className="mt-1 text-[#FDFDFD]/80">{company.industry}</p>
-              )}
-              {company.location && (
-                <p className="mt-2 flex items-center gap-1 text-sm text-[#FDFDFD]/70">
-                  <MapPin className="h-4 w-4" aria-hidden="true" /> {company.location}
-                </p>
-              )}
-            </div>
             </div>
             {canFollow ? (
               <Button
                 type="button"
-                variant={following ? "outline" : "default"}
+                variant={following ? "onDarkOutline" : "onDark"}
                 loading={followBusy}
                 onClick={toggleFollow}
                 aria-pressed={following}
-                className="bg-white/95 text-[#0C44B7] hover:bg-white"
+                className="w-fit shrink-0 self-start whitespace-nowrap"
               >
                 {following ? "Following ✓" : "Follow"}
               </Button>
+            ) : showSignInToFollow ? (
+              <Link
+                href="/auth/login"
+                className={cn(
+                  buttonVariants({ variant: "onDarkOutline" }),
+                  "w-fit shrink-0 self-start whitespace-nowrap",
+                )}
+              >
+                Sign in to follow this company →
+              </Link>
+            ) : isOwner ? (
+              <span className="inline-flex w-fit shrink-0 self-start rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-sm text-[#FDFDFD]/85">
+                Your company
+              </span>
             ) : null}
           </div>
         </div>
@@ -181,24 +207,6 @@ export default function CompanyDetailPage() {
                 )}
               </CardContent>
             </Card>
-
-            <div>
-              <h2 className="text-heading mb-4 text-xl font-bold">
-                Open Positions ({openJobs.length})
-              </h2>
-              {openJobs.length === 0 ? (
-                <EmptyState
-                  title="No open jobs"
-                  description="This company has no active job listings at the moment."
-                />
-              ) : (
-                <div className="grid gap-4">
-                  {openJobs.map((job) => (
-                    <JobCard key={job.id} job={job} hideCompanyVerified />
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           <aside>
@@ -249,6 +257,40 @@ export default function CompanyDetailPage() {
             </Card>
           </aside>
         </div>
+
+        <hr className="my-12 border-t border-default" />
+
+        <section
+          aria-label="Open positions"
+          className="rounded-2xl bg-surface-muted px-4 py-10 sm:px-6"
+        >
+          <div className="mb-6">
+            <h2 className="text-heading text-xl font-bold sm:text-2xl">
+              Open Positions ({openJobs.length})
+            </h2>
+            <p className="text-subtle mt-1 text-sm">
+              Active roles currently hiring at this company
+            </p>
+          </div>
+          {openJobs.length === 0 ? (
+            <EmptyState
+              title="No open jobs"
+              description="This company has no active job listings at the moment."
+            />
+          ) : (
+            <div className="grid gap-3">
+              {openJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  variant="list"
+                  hideCompanyVerified
+                  hideCompanyAvatar
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
