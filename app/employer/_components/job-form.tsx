@@ -13,11 +13,14 @@ import { Select } from "@/components/ui/form";
 import { ImageUpload } from "@/components/image-upload";
 import { SkillTagInput } from "@/components/skill-tag-input";
 import catalogService from "@/services/catalog";
+import aiService from "@/services/ai";
 import { EXPERIENCE_LEVELS, JOB_TYPES } from "@/lib/constants";
 import { formatLabel, resolveMediaUrl } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { toast } from "sonner";
-import type { Job, Skill } from "@/types";
+import type { ExperienceLevel, Job, JobTemplate, JobType, Skill } from "@/types";
+import { Sparkles } from "lucide-react";
+import jobTemplatesService from "@/services/job-templates";
 
 export const jobFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -72,6 +75,7 @@ export function JobForm({
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<JobFormValues>({
     resolver: zodResolver(jobFormSchema),
@@ -89,6 +93,19 @@ export function JobForm({
       ...defaultValues,
     },
   });
+
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [templates, setTemplates] = useState<JobTemplate[]>([]);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
+
+  useEffect(() => {
+    jobTemplatesService
+      .list()
+      .then(setTemplates)
+      .catch(() => setTemplates([]));
+  }, []);
 
   useEffect(() => {
     if (imageFile) {
@@ -137,6 +154,123 @@ export function JobForm({
     );
   };
 
+  const loadTemplate = async (templateId: string) => {
+    if (!templateId) return;
+    const template = templates.find((t) => String(t.id) === templateId);
+    if (!template) return;
+    setLoadingTemplate(true);
+    try {
+      if (template.title) setValue("title", template.title, { shouldValidate: true });
+      if (template.description != null) {
+        setValue("description", template.description, { shouldValidate: true });
+      }
+      if (template.category) setValue("category", template.category);
+      if (template.location) setValue("location", template.location);
+      if (template.job_type && (JOB_TYPES as readonly string[]).includes(template.job_type)) {
+        setValue("job_type", template.job_type as JobType);
+      }
+      if (
+        template.experience_level &&
+        (EXPERIENCE_LEVELS as readonly string[]).includes(template.experience_level)
+      ) {
+        setValue("experience_level", template.experience_level as ExperienceLevel);
+      }
+      const skillIds = template.default_skills || [];
+      if (skillIds.length) {
+        const catalog = await catalogService.listSkills();
+        handleSkillsChange(catalog.filter((skill) => skillIds.includes(skill.id)));
+      } else {
+        handleSkillsChange([]);
+      }
+      toast.success(`Loaded template “${template.name}” — review before posting`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setLoadingTemplate(false);
+    }
+  };
+
+  const saveAsTemplate = async () => {
+    const name = window.prompt("Template name");
+    if (!name?.trim()) return;
+    const values = getValues();
+    setSavingTemplate(true);
+    try {
+      const created = await jobTemplatesService.create({
+        name: name.trim(),
+        title: values.title,
+        description: values.description || undefined,
+        category: values.category || undefined,
+        job_type: values.job_type,
+        experience_level: values.experience_level,
+        location: values.location || undefined,
+        default_skills: values.skill_ids || selectedSkills.map((s) => s.id),
+      });
+      setTemplates((prev) => [created, ...prev]);
+      toast.success("Template saved");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const buildAiPrompt = () => {
+    const typed = aiPrompt.trim();
+    if (typed.length >= 3) return typed;
+
+    const values = getValues();
+    const parts = [
+      values.title?.trim(),
+      values.category?.trim() ? `Category: ${values.category.trim()}` : "",
+      values.location?.trim() ? `Location: ${values.location.trim()}` : "",
+      values.description?.trim(),
+    ].filter(Boolean);
+
+    return parts.join("\n").trim();
+  };
+
+  const generateWithAi = async () => {
+    const prompt = buildAiPrompt();
+    if (prompt.length < 3) {
+      toast.error(
+        "Add a short role idea in the AI box, or fill in the job title first.",
+      );
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const draft = await aiService.generateJobDescription(prompt);
+      if (draft.title) setValue("title", draft.title, { shouldValidate: true });
+      if (draft.description) {
+        setValue("description", draft.description, { shouldValidate: true });
+      }
+      if (draft.category) setValue("category", draft.category);
+      if (draft.location) setValue("location", draft.location);
+      if (draft.job_type && (JOB_TYPES as readonly string[]).includes(draft.job_type)) {
+        setValue("job_type", draft.job_type as JobType);
+      }
+      if (
+        draft.experience_level &&
+        (EXPERIENCE_LEVELS as readonly string[]).includes(draft.experience_level)
+      ) {
+        setValue("experience_level", draft.experience_level as ExperienceLevel);
+      }
+      if (draft.matched_skills?.length) {
+        const merged = [...selectedSkills];
+        for (const skill of draft.matched_skills) {
+          if (!merged.some((s) => s.id === skill.id)) merged.push(skill);
+        }
+        handleSkillsChange(merged);
+      }
+      toast.success("Draft generated — review and edit before posting.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleFormSubmit = async (values: JobFormValues) => {
     setSubmitting(true);
     try {
@@ -152,6 +286,66 @@ export function JobForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-default bg-surface-muted/50 p-4">
+        <div className="min-w-[200px] flex-1">
+          <FormGroup label="Load from template">
+            <Select
+              aria-label="Load job posting from template"
+              defaultValue=""
+              disabled={loadingTemplate || templates.length === 0}
+              onChange={(e) => {
+                void loadTemplate(e.target.value);
+                e.target.value = "";
+              }}
+            >
+              <option value="">
+                {templates.length ? "Choose a template…" : "No templates yet"}
+              </option>
+              {templates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          loading={savingTemplate}
+          onClick={saveAsTemplate}
+        >
+          Save as template
+        </Button>
+      </div>
+
+      <div className="space-y-3 rounded-xl border border-default bg-surface-muted p-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-[var(--brand-blue)]" aria-hidden="true" />
+          <p className="text-sm font-semibold text-heading">AI assist</p>
+        </div>
+        <p className="text-subtle text-xs">
+          Type a rough idea here, or fill the title/description below and click Generate.
+        </p>
+        <Textarea
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+          rows={3}
+          placeholder="e.g. need a Python backend dev with 2 years experience, remote OK"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          loading={aiLoading}
+          disabled={aiLoading}
+          onClick={() => void generateWithAi()}
+        >
+          <Sparkles className="h-4 w-4" />
+          Generate draft
+        </Button>
+      </div>
+
       <FormGroup label="Job title">
         <Input
           {...register("title")}
