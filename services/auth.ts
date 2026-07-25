@@ -30,6 +30,45 @@ export const authService = {
     return data;
   },
 
+  async verify2fa(payload: {
+    temp_token: string;
+    code: string;
+  }): Promise<LoginResponse> {
+    const { data } = await apiClient.post<LoginResponse>(
+      "/api/auth/verify-2fa",
+      payload,
+    );
+    return data;
+  },
+
+  async toggle2fa(payload: {
+    enabled: boolean;
+    password?: string;
+  }): Promise<User> {
+    const { data } = await apiClient.patch<{ user: User; message: string }>(
+      "/api/me/2fa",
+      payload,
+    );
+    return data.user;
+  },
+
+  async exportMyData(format: "json" | "csv" = "json"): Promise<void> {
+    if (format === "csv") {
+      const { downloadFromApi } = await import("@/lib/download");
+      await downloadFromApi("/api/me/export?format=csv", "my-hirehub-data.csv");
+      return;
+    }
+    const { data } = await apiClient.get<Record<string, unknown>>(
+      "/api/me/export",
+      { params: { format: "json" } },
+    );
+    const { downloadBlob } = await import("@/lib/download");
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    downloadBlob(blob, "my-hirehub-data.json");
+  },
+
   async logout(): Promise<MessageResponse> {
     const { data } = await apiClient.post<MessageResponse>(
       "/api/auth/logout",

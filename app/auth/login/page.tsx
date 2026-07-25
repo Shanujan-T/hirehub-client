@@ -21,12 +21,19 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const otpSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+});
+
 type LoginForm = z.infer<typeof loginSchema>;
+type OtpForm = z.infer<typeof otpSchema>;
 
 function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, verify2fa } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [tempToken, setTempToken] = useState<string | null>(null);
+  const [debugHint, setDebugHint] = useState<string | null>(null);
 
   const {
     register,
@@ -34,10 +41,18 @@ function LoginForm() {
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
+  const otpForm = useForm<OtpForm>({ resolver: zodResolver(otpSchema) });
+
   const onSubmit = async (data: LoginForm) => {
     setSubmitting(true);
     try {
-      await login({ email: data.email, password: data.password });
+      const result = await login({ email: data.email, password: data.password });
+      if (result.requires_2fa) {
+        setTempToken(result.temp_token);
+        setDebugHint(result.debug_otp ?? null);
+        toast.message("Enter the verification code sent to you");
+        return;
+      }
       toast.success("Welcome back!");
       router.push("/");
     } catch (err) {
@@ -46,6 +61,62 @@ function LoginForm() {
       setSubmitting(false);
     }
   };
+
+  const onVerify = async (data: OtpForm) => {
+    if (!tempToken) return;
+    setSubmitting(true);
+    try {
+      await verify2fa({ temp_token: tempToken, code: data.code });
+      toast.success("Welcome back!");
+      router.push("/");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (tempToken) {
+    return (
+      <AuthLayout
+        title="Two-factor authentication"
+        subtitle="Enter the 6-digit code we sent you"
+      >
+        <form onSubmit={otpForm.handleSubmit(onVerify)} className="space-y-4">
+          <FormGroup label="Verification code">
+            <Input
+              {...otpForm.register("code")}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="123456"
+              maxLength={6}
+              aria-label="Six-digit verification code"
+              error={otpForm.formState.errors.code?.message}
+            />
+          </FormGroup>
+          {debugHint ? (
+            <p className="text-subtle text-xs" role="status">
+              Demo code: {debugHint}
+            </p>
+          ) : null}
+          <Button type="submit" className="w-full" loading={submitting}>
+            Verify and sign in
+          </Button>
+          <button
+            type="button"
+            className="text-subtle w-full text-center text-sm hover:underline"
+            onClick={() => {
+              setTempToken(null);
+              setDebugHint(null);
+              otpForm.reset();
+            }}
+          >
+            Back to sign in
+          </button>
+        </form>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your HireHub account">

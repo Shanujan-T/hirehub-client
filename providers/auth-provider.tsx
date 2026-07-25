@@ -20,12 +20,17 @@ import type {
   User,
 } from "@/types";
 
+export type LoginResult =
+  | { requires_2fa: true; temp_token: string; debug_otp?: string }
+  | { requires_2fa?: false; user: User };
+
 interface AuthContextValue {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => Promise<User>;
+  login: (payload: LoginPayload) => Promise<LoginResult>;
+  verify2fa: (payload: { temp_token: string; code: string }) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<User>;
@@ -94,15 +99,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return sessionUser;
   }, []);
 
-  const login = useCallback(async (payload: LoginPayload) => {
+  const login = useCallback(async (payload: LoginPayload): Promise<LoginResult> => {
     const response = await authService.login(payload);
+    if (response.requires_2fa && response.temp_token) {
+      return {
+        requires_2fa: true,
+        temp_token: response.temp_token,
+        debug_otp: response.debug_otp,
+      };
+    }
     if (!response.access_token || !response.user?.id || !response.user.email) {
       throw new Error(
         "Sign in did not complete. The server response was missing account data.",
       );
     }
-    return establishSession(response.access_token, response.user);
+    return {
+      requires_2fa: false,
+      user: establishSession(response.access_token, response.user),
+    };
   }, [establishSession]);
+
+  const verify2fa = useCallback(
+    async (payload: { temp_token: string; code: string }) => {
+      const response = await authService.verify2fa(payload);
+      if (!response.access_token || !response.user?.id || !response.user.email) {
+        throw new Error(
+          "Verification did not complete. The server response was missing account data.",
+        );
+      }
+      return establishSession(response.access_token, response.user);
+    },
+    [establishSession],
+  );
 
   const register = useCallback(async (payload: RegisterPayload) => {
     const response = await authService.register(payload);
@@ -148,12 +176,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: Boolean(token && user),
       login,
+      verify2fa,
       register,
       logout,
       refreshProfile,
       updateProfile,
     }),
-    [user, token, isLoading, login, register, logout, refreshProfile, updateProfile],
+    [
+      user,
+      token,
+      isLoading,
+      login,
+      verify2fa,
+      register,
+      logout,
+      refreshProfile,
+      updateProfile,
+    ],
   );
 
   return (
