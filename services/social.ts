@@ -270,6 +270,17 @@ export const socialService = {
     return data.community;
   },
 
+  async uploadCommunityCover(id: number, file: File): Promise<Community> {
+    const formData = new FormData();
+    formData.append("cover", file);
+    const { data } = await apiClient.post<{ community: Community; message: string }>(
+      `/api/communities/${id}/cover`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return data.community;
+  },
+
   async deleteCommunity(id: number): Promise<MessageResponse> {
     const { data } = await apiClient.delete<MessageResponse>(
       `/api/communities/${id}`,
