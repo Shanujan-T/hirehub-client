@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Download, FileText, Mail, Sparkles, User } from "lucide-react";
+import { Download, FileText, Mail, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
+import { BackLink } from "@/components/back-link";
 import { ScheduleInterviewForm } from "@/components/interview-scheduling";
 import { PortalLayout } from "@/components/layout/main-layout";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -419,12 +420,11 @@ function JobApplicantsContent() {
 
   return (
     <>
-      <Link
+      <BackLink
         href={`/employer/jobs/${job.id}`}
-        className="text-subtle mb-4 inline-flex items-center gap-1 text-sm hover:text-[var(--brand-blue)]"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to job
-      </Link>
+        label="Back to job"
+        className="mb-4"
+      />
 
       <PageHeader
         title="Applicants"
