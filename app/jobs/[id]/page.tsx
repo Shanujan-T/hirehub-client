@@ -19,11 +19,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { LoadingState, EmptyState, FormGroup } from "@/app/_components/page-states";
 import { JobCard } from "@/components/cards/index";
+import { BackLink } from "@/components/back-link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/shared";
 import { DeadlineCountdown } from "@/components/deadline-countdown";
+import { ContentCoverImage } from "@/components/content-cover-image";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { useAuth } from "@/providers/auth-provider";
 import jobsService from "@/services/jobs";
@@ -196,18 +198,18 @@ export default function JobDetailPage() {
       )}
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <BackLink href="/jobs" label="Back to Jobs" className="mb-6" />
         <section aria-label="Job details">
           <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
             <div className="space-y-6">
               {bannerSrc && (
-                <div className="overflow-hidden rounded-2xl border border-default">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={bannerSrc}
-                    alt={`Cover for ${job.title}`}
-                    className="aspect-[2/1] w-full object-cover"
-                  />
-                </div>
+                <ContentCoverImage
+                  src={bannerSrc}
+                  alt={`Cover for ${job.title}`}
+                  maxHeightClass="max-h-[320px]"
+                  roundedClassName="rounded-2xl"
+                  className="border border-default"
+                />
               )}
 
               <div className="space-y-4">
