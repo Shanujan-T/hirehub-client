@@ -11,11 +11,19 @@ interface PostImageDropzoneProps {
 
 export function PostImageDropzone(props: PostImageDropzoneProps) {
   return (
-    <ImageUpload
-      {...props}
-      dropzoneTitle="Add a cover image"
-      dropzoneHint="JPG, PNG, or WEBP · max 5MB · optional"
-    />
+    <div className={props.className}>
+      <ImageUpload
+        file={props.file}
+        previewUrl={props.previewUrl}
+        onFileChange={props.onFileChange}
+        dropzoneTitle="Add a cover image"
+        dropzoneHint="JPG, PNG, or WEBP · max 5MB · optional"
+      />
+      <p className="text-subtle mt-2 text-xs leading-relaxed">
+        Add a photo relevant to your post (optional) — screenshots, certificates,
+        or real photos work best.
+      </p>
+    </div>
   );
 }
 
