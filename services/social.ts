@@ -76,6 +76,14 @@ export const socialService = {
     return data.profile;
   },
 
+  async endorseSkill(userSkillId: number): Promise<number | undefined> {
+    const { data } = await apiClient.post<{
+      user_skill?: { endorsement_count?: number };
+      message: string;
+    }>(`/api/user-skills/${userSkillId}/endorse`);
+    return data.user_skill?.endorsement_count;
+  },
+
   // ── Mentorship ─────────────────────────────────────────────────────────────
 
   async createMentorship(

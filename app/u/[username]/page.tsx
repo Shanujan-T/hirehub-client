@@ -7,8 +7,9 @@ import { BadgeCheck, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Card, CardContent } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
+import { useAuth } from "@/providers/auth-provider";
 import socialService from "@/services/social";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatLabel, resolveMediaUrl } from "@/lib/utils";
@@ -17,9 +18,11 @@ import type { PublicSeekerProfile } from "@/types";
 export default function PublicSeekerProfilePage() {
   const params = useParams();
   const username = String(params.username || "");
+  const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<PublicSeekerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [endorsingId, setEndorsingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!username) {
@@ -39,6 +42,39 @@ export default function PublicSeekerProfilePage() {
       })
       .finally(() => setLoading(false));
   }, [username]);
+
+  const canEndorse =
+    isAuthenticated &&
+    user?.role === "seeker" &&
+    profile?.user_id != null &&
+    user.id !== profile.user_id;
+
+  const endorse = async (userSkillId: number) => {
+    setEndorsingId(userSkillId);
+    try {
+      const count = await socialService.endorseSkill(userSkillId);
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          skills: prev.skills.map((skill) =>
+            skill.id === userSkillId
+              ? {
+                  ...skill,
+                  endorsement_count:
+                    count ?? (skill.endorsement_count ?? 0) + 1,
+                }
+              : skill,
+          ),
+        };
+      });
+      toast.success("Skill endorsed");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setEndorsingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -85,7 +121,7 @@ export default function PublicSeekerProfilePage() {
                 <p className="text-subtle mt-1 text-sm">@{profile.username}</p>
                 {profile.location ? (
                   <p className="text-subtle mt-2 inline-flex items-center gap-1 text-sm">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
                     {profile.location}
                   </p>
                 ) : null}
@@ -106,19 +142,40 @@ export default function PublicSeekerProfilePage() {
             {profile.skills.length > 0 ? (
               <div>
                 <h2 className="text-heading mb-2 text-sm font-semibold">Skills</h2>
-                <div className="flex flex-wrap gap-2">
+                <ul className="space-y-2">
                   {profile.skills.map((skill) => (
-                    <span
+                    <li
                       key={skill.id}
-                      className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_10%,var(--surface-muted))] px-3 py-1 text-xs font-medium text-heading"
+                      className="flex flex-wrap items-center gap-2 rounded-lg border border-default bg-surface-muted/40 px-3 py-2"
                     >
-                      {skill.name}
+                      <span className="text-sm font-medium text-heading">
+                        {skill.name}
+                      </span>
                       {skill.verified ? (
-                        <BadgeCheck className="h-3.5 w-3.5 text-[var(--brand-blue)]" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_12%,transparent)] px-2 py-0.5 text-[11px] font-semibold text-[var(--brand-blue)]">
+                          <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          Verified by employer
+                        </span>
                       ) : null}
-                    </span>
+                      <span className="text-subtle text-xs">
+                        Endorsed by {skill.endorsement_count ?? 0} peers
+                      </span>
+                      {canEndorse ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="ml-auto"
+                          disabled={endorsingId === skill.id}
+                          onClick={() => endorse(skill.id)}
+                          aria-label={`Endorse ${skill.name}`}
+                        >
+                          {endorsingId === skill.id ? "…" : "Endorse"}
+                        </Button>
+                      ) : null}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             ) : null}
 
@@ -129,8 +186,9 @@ export default function PublicSeekerProfilePage() {
                 rel="noopener noreferrer"
                 className={buttonVariants({ variant: "outline" })}
               >
-                <FileText className="h-4 w-4" />
+                <FileText className="h-4 w-4" aria-hidden="true" />
                 View resume
+                <span className="sr-only">(opens in new tab)</span>
               </a>
             ) : null}
           </CardContent>
