@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DeadlineCountdownProps {
@@ -16,20 +17,19 @@ export function deadlineLabel(daysRemaining: number | null | undefined): string 
   return `${daysRemaining} days left to apply`;
 }
 
+/** Text-only urgency colors — no pill/bar background. */
 export function deadlineUrgencyClass(
   daysRemaining: number | null | undefined,
 ): string {
   if (daysRemaining == null) return "";
-  if (daysRemaining < 0) {
-    return "bg-red-500/15 text-red-700 dark:text-red-300";
-  }
   if (daysRemaining <= 1) {
-    return "bg-red-500/15 text-red-700 dark:text-red-300";
+    return "text-red-600 dark:text-red-400";
   }
   if (daysRemaining <= 3) {
-    return "bg-amber-500/15 text-amber-800 dark:text-amber-300";
+    return "text-amber-600 dark:text-amber-400";
   }
-  return "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300";
+  // >3 days (including >7): muted, same weight as location/job-type row
+  return "text-subtle";
 }
 
 export function DeadlineCountdown({
@@ -42,12 +42,13 @@ export function DeadlineCountdown({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex w-fit max-w-full items-center gap-1.5 self-start text-sm",
         deadlineUrgencyClass(daysRemaining),
         className,
       )}
     >
-      {label}
+      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span>{label}</span>
     </span>
   );
 }
