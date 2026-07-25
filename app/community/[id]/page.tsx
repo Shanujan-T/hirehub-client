@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Avatar } from "@/components/ui/shared";
+import { ContentCoverImage } from "@/components/content-cover-image";
 import { useAuth } from "@/providers/auth-provider";
 import postsService from "@/services/posts";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -146,22 +147,8 @@ export default function PostDetailPage() {
         </Link>
 
         <Card className="mb-6 overflow-hidden">
-          {imageSrc && (
-            <button
-              type="button"
-              className="block w-full cursor-zoom-in"
-              onClick={() => setLightboxOpen(true)}
-              aria-label="Expand post image"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageSrc}
-                alt=""
-                className="max-h-96 w-full object-contain bg-[color-mix(in_srgb,var(--text-subtle)_8%,transparent)]"
-              />
-            </button>
-          )}
           <CardContent className="p-6">
+            {/* 1. Author row */}
             <div className="mb-4 flex items-start gap-3">
               {post.author && (
                 <Avatar name={post.author.full_name} src={post.author.avatar_url} entityId={post.author.id} />
@@ -197,7 +184,26 @@ export default function PostDetailPage() {
                 {formatLabel(post.type)}
               </span>
             </div>
+
+            {/* 2. Title */}
             <h1 className="text-heading text-2xl font-bold">{post.title}</h1>
+
+            {/* 3. Cover image (flexible aspect, larger detail cap) */}
+            {imageSrc ? (
+              <button
+                type="button"
+                className="mt-4 block w-full cursor-zoom-in"
+                onClick={() => setLightboxOpen(true)}
+                aria-label="Expand post image"
+              >
+                <ContentCoverImage
+                  src={imageSrc}
+                  maxHeightClass="max-h-[420px]"
+                />
+              </button>
+            ) : null}
+
+            {/* 4. Body */}
             <div className="prose prose-sm mt-4 max-w-none whitespace-pre-wrap text-[#133099]/90 dark:text-heading/90">
               {post.body}
             </div>
