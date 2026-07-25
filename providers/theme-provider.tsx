@@ -28,7 +28,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemePreference>("light");
+  const [theme, setThemeState] = useState<ThemePreference>("system");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
   const [mounted, setMounted] = useState(false);
 
@@ -39,13 +39,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!mounted || theme !== "system") return;
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => setResolvedTheme(applyTheme("system"));
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [mounted, theme]);
+
   const setTheme = useCallback((next: ThemePreference) => {
     setThemeState(next);
     setResolvedTheme(applyTheme(next));
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    const next: ThemePreference =
+      resolveTheme(theme) === "dark" ? "light" : "dark";
+    setTheme(next);
   }, [theme, setTheme]);
 
   useEffect(() => {
