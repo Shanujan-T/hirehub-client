@@ -55,6 +55,7 @@ export interface User {
   resume_public?: boolean;
   avatar_url: string | null;
   username?: string | null;
+  two_factor_enabled?: boolean;
   is_active: boolean;
   created_at: string | null;
   skills?: UserSkill[];
@@ -94,6 +95,7 @@ export interface UserSkill {
   level: SkillLevel;
   verified?: boolean;
   verified_by?: number | null;
+  endorsement_count?: number;
   skill: Skill | null;
   created_at: string | null;
 }
@@ -135,6 +137,7 @@ export interface Job {
   salary_max: number | null;
   distance_km?: number;
   deadline: string | null;
+  days_remaining?: number | null;
   status: JobStatus;
   image_url: string | null;
   created_at: string | null;
@@ -178,6 +181,7 @@ export interface Application {
   resume_url: string | null;
   status: ApplicationStatus;
   rejection_reason?: string | null;
+  ai_summary?: string | null;
   interview?: Interview | null;
   created_at: string | null;
   job?: Job;
@@ -346,14 +350,31 @@ export interface PublicSeekerProfile {
   location: string | null;
   avatar_url: string | null;
   education_level: EducationLevel | null;
+  user_id?: number;
   skills: {
     id: number;
+    skill_id?: number;
     name: string;
     level: string;
     verified: boolean;
+    endorsement_count?: number;
   }[];
   resume_url: string | null;
   resume_public: boolean;
+}
+
+export interface JobTemplate {
+  id: number;
+  employer_id: number;
+  name: string;
+  title: string | null;
+  description: string | null;
+  category: string | null;
+  job_type: string | null;
+  experience_level: string | null;
+  location: string | null;
+  default_skills: number[];
+  created_at: string | null;
 }
 
 // ── Mentorship ───────────────────────────────────────────────────────────────
@@ -646,8 +667,11 @@ export interface MessageResponse {
 
 export interface LoginResponse {
   message: string;
-  access_token: string;
-  user: User;
+  access_token?: string;
+  user?: User;
+  requires_2fa?: boolean;
+  temp_token?: string;
+  debug_otp?: string;
 }
 
 export interface RegisterResponse {
