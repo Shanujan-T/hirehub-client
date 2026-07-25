@@ -26,7 +26,7 @@ export function ImageUpload({
   className,
   dropzoneTitle = "Add an image",
   dropzoneHint = "JPG, PNG, or WEBP · max 5MB · optional",
-  previewAspectClass = "aspect-video w-full object-cover",
+  previewAspectClass = "mx-auto max-h-[320px] w-full object-contain bg-gray-50 dark:bg-gray-900",
   previewAlt = "Image preview",
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
