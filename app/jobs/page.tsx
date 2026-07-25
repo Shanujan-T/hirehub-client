@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, Briefcase } from "lucide-react";
+import { Bookmark, Briefcase, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { SearchBar } from "@/components/search/search-bar";
 import { JobCard } from "@/components/cards";
@@ -13,6 +13,7 @@ import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { useAuth } from "@/providers/auth-provider";
 import jobsService from "@/services/jobs";
 import savedSearchesService from "@/services/saved-searches";
+import aiService from "@/services/ai";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { PAGE_HEADER_BAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -218,9 +219,13 @@ function SaveSearchPanel() {
 }
 
 function JobsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [plainEnglish, setPlainEnglish] = useState(false);
+  const [nlQuery, setNlQuery] = useState("");
+  const [nlSearching, setNlSearching] = useState(false);
 
   const filters: JobsQueryParams = {
     q: searchParams.get("q") || undefined,
@@ -246,8 +251,38 @@ function JobsPage() {
   }, [filters.q, filters.location, filters.category, filters.job_type, filters.experience_level]);
 
   useEffect(() => {
+    if (plainEnglish) return;
     fetchJobs();
-  }, [fetchJobs]);
+  }, [fetchJobs, plainEnglish]);
+
+  const runPlainEnglishSearch = async () => {
+    const query = nlQuery.trim();
+    if (query.length < 4) {
+      toast.error("Try a fuller sentence, e.g. remote data jobs in Colombo.");
+      return;
+    }
+    setNlSearching(true);
+    setLoading(true);
+    try {
+      const result = await aiService.parseSearch(query);
+      setJobs(result.jobs);
+      const params = new URLSearchParams();
+      const f = result.filters;
+      if (f.q) params.set("q", f.q);
+      if (f.location) params.set("location", f.location);
+      if (f.category) params.set("category", f.category);
+      if (f.job_type) params.set("job_type", f.job_type);
+      if (f.experience_level) params.set("experience_level", f.experience_level);
+      const qs = params.toString();
+      router.replace(qs ? `/jobs?${qs}` : "/jobs");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+      setJobs([]);
+    } finally {
+      setNlSearching(false);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-surface transition-colors duration-300">
@@ -257,8 +292,43 @@ function JobsPage() {
           <p className="text-subtle mt-1">
             Discover opportunities that match your skills and goals
           </p>
-          <div className="mt-6">
-            <SearchBar variant="inline" defaultValues={filters} />
+          <div className="mt-4">
+            <label className="inline-flex items-center gap-2 text-sm text-heading">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[var(--brand-blue)]"
+                checked={plainEnglish}
+                onChange={(e) => setPlainEnglish(e.target.checked)}
+              />
+              Search in plain English
+            </label>
+          </div>
+          <div className="mt-4">
+            {plainEnglish ? (
+              <div className="space-y-3 rounded-2xl border border-default bg-surface-card p-3 shadow-sm">
+                <Input
+                  value={nlQuery}
+                  onChange={(e) => setNlQuery(e.target.value)}
+                  placeholder='e.g. "find me remote data jobs in Colombo"'
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void runPlainEnglishSearch();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  loading={nlSearching}
+                  onClick={() => void runPlainEnglishSearch()}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Search with AI
+                </Button>
+              </div>
+            ) : (
+              <SearchBar variant="inline" defaultValues={filters} />
+            )}
           </div>
         </div>
       </div>

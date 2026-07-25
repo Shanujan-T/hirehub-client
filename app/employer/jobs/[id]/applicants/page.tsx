@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Download, FileText, Mail, User } from "lucide-react";
+import { ArrowLeft, Download, FileText, Mail, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { ScheduleInterviewForm } from "@/components/interview-scheduling";
@@ -18,6 +18,7 @@ import { PageHeader } from "@/app/employer/_components/page-header";
 import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
 import conversationsService from "@/services/conversations";
+import aiService from "@/services/ai";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { cn, formatDate } from "@/lib/utils";
 import type { Application, Job } from "@/types";
@@ -169,6 +170,7 @@ function ApplicantRow({
   const router = useRouter();
   const seeker = application.seeker;
   const [openingMessage, setOpeningMessage] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
   const selectable = ["pending", "shortlisted"].includes(application.status);
 
   const openMessage = async () => {
@@ -180,6 +182,18 @@ function ApplicantRow({
       toast.error(getApiErrorMessage(err));
     } finally {
       setOpeningMessage(false);
+    }
+  };
+
+  const loadSummary = async () => {
+    setSummarizing(true);
+    try {
+      const result = await aiService.summarizeCandidate(application.id);
+      onUpdate({ ...application, ai_summary: result.summary });
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSummarizing(false);
     }
   };
 
@@ -211,6 +225,21 @@ function ApplicantRow({
               </h3>
               <StatusBadge status={application.status} />
             </div>
+            {application.ai_summary ? (
+              <p className="text-subtle mt-1 text-sm leading-relaxed">
+                {application.ai_summary}
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="text-subtle mt-1 inline-flex items-center gap-1 text-xs hover:text-heading"
+                disabled={summarizing}
+                onClick={() => void loadSummary()}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {summarizing ? "Summarizing…" : "Generate AI summary"}
+              </button>
+            )}
             <p className="text-subtle text-sm">
               Applied {formatDate(application.created_at)}
             </p>

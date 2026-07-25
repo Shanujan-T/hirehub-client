@@ -79,6 +79,10 @@ export function getApiErrorMessage(
     if (!error.response) {
       if (isApiUnreachableError(error)) {
         if (error.code === "ECONNABORTED") {
+          const url = String(error.config?.url || "");
+          if (url.includes("/api/ai/")) {
+            return "AI generation timed out. The model is taking longer than usual — please try again.";
+          }
           return "Request timed out. Check that the API server is running.";
         }
         return "Cannot reach the API server. Make sure hirehub-api is running on port 5000.";
@@ -91,10 +95,11 @@ export function getApiErrorMessage(
     if (data?.error) return data.error;
     if (data?.message) return data.message;
 
-    // Next.js dev proxy returns plain-text 500 when Flask is down or unreachable.
+    // Next.js rewrite/proxy failures often surface as generic 500 plain text.
+    // That is not the same as "Flask is not running" — keep messaging accurate.
     if (status >= 500) {
       if (typeof data === "string" && /internal server error/i.test(data)) {
-        return "Cannot reach the API server. Start the backend: cd hirehub-api && python run.py";
+        return "API request failed (server error). If AI is running, wait and retry; otherwise restart hirehub-api.";
       }
       if (
         !data ||
@@ -103,7 +108,7 @@ export function getApiErrorMessage(
           !data.errors?.length &&
           !data.message)
       ) {
-        return "Cannot reach the API server. Make sure hirehub-api is running on port 5000.";
+        return "API request failed. Confirm hirehub-api is running on port 5000, then retry.";
       }
     }
 
