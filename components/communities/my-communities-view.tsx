@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { CommunityCard } from "@/components/cards";
-import { buttonVariants } from "@/components/ui/button";
+import { NewCommunityDialog } from "@/components/community/new-community-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
 import socialService from "@/services/social";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -15,6 +16,7 @@ export function MyCommunitiesView() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [leavingId, setLeavingId] = useState<number | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const fetchCommunities = useCallback(async () => {
     setLoading(true);
@@ -59,6 +61,9 @@ export function MyCommunitiesView() {
             Communities you&apos;ve joined
           </p>
         </div>
+        <Button type="button" onClick={() => setCreateOpen(true)} className="w-fit shrink-0">
+          <Plus className="h-4 w-4" aria-hidden="true" /> Create community
+        </Button>
       </div>
 
       {loading ? (
@@ -87,6 +92,12 @@ export function MyCommunitiesView() {
           ))}
         </div>
       )}
+
+      <NewCommunityDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={fetchCommunities}
+      />
     </div>
   );
 }
