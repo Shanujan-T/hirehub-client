@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BadgeCheck, Briefcase, Building2, Check, Clock, LogOut, MapPin } from "lucide-react";
+import { DeadlineCountdown } from "@/components/deadline-countdown";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -181,6 +182,10 @@ export function JobCard({
 
       <SalaryDisplay min={job.salary_min} max={job.salary_max} />
 
+      {job.days_remaining != null || job.deadline ? (
+        <DeadlineCountdown daysRemaining={job.days_remaining} />
+      ) : null}
+
       <SkillTags skills={job.skills} />
 
       {job.matched_skills?.length ? (
@@ -225,7 +230,11 @@ function JobThumbnail({ job, className }: { job: Job; className?: string }) {
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+        <img
+          src={imageSrc}
+          alt={job.title ? `Cover for ${job.title}` : "Job cover"}
+          className="h-full w-full object-cover"
+        />
       </div>
     );
   }

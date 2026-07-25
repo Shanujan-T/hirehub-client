@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   Send,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -22,10 +23,12 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/shared";
+import { DeadlineCountdown } from "@/components/deadline-countdown";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { useAuth } from "@/providers/auth-provider";
 import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
+import aiService from "@/services/ai";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { cn, formatDate, formatLabel, formatSalary, resolveMediaUrl } from "@/lib/utils";
 import type { Job } from "@/types";
@@ -51,13 +54,14 @@ export default function JobDetailPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [applied, setApplied] = useState(false);
-
+  const [draftingCover, setDraftingCover] = useState(false);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ApplyForm>({ resolver: zodResolver(applySchema) });
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     if (!jobId || Number.isNaN(jobId)) {
@@ -143,6 +147,19 @@ export default function JobDetailPage() {
     }
   };
 
+  const draftCoverLetter = async () => {
+    setDraftingCover(true);
+    try {
+      const text = await aiService.generateCoverLetter(jobId);
+      setValue("cover_letter", text, { shouldValidate: true });
+      toast.success("Cover letter drafted — edit before submitting.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setDraftingCover(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-surface min-h-screen py-12">
@@ -187,7 +204,7 @@ export default function JobDetailPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={bannerSrc}
-                    alt=""
+                    alt={`Cover for ${job.title}`}
                     className="aspect-[2/1] w-full object-cover"
                   />
                 </div>
@@ -198,6 +215,7 @@ export default function JobDetailPage() {
                   <Badge>{formatLabel(job.job_type)}</Badge>
                   <Badge>{formatLabel(job.experience_level)}</Badge>
                   {job.status !== "open" && <StatusBadge status={job.status} />}
+                  <DeadlineCountdown daysRemaining={job.days_remaining} />
                 </div>
 
                 <div>
@@ -351,6 +369,18 @@ export default function JobDetailPage() {
                     ) : (
                       <form onSubmit={handleSubmit(onApply)} className="space-y-4">
                         <FormGroup label="Cover Letter">
+                          <div className="mb-2 flex justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              loading={draftingCover}
+                              onClick={() => void draftCoverLetter()}
+                            >
+                              <Sparkles className="h-4 w-4" />
+                              Draft with AI
+                            </Button>
+                          </div>
                           <Textarea
                             {...register("cover_letter")}
                             rows={6}
