@@ -9,7 +9,7 @@ import { JobCard } from "@/components/cards";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth-provider";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -25,6 +25,8 @@ export default function CompanyDetailPage() {
   const { user, isAuthenticated } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
 
   useEffect(() => {
     if (!companyId || Number.isNaN(companyId)) {
@@ -37,6 +39,34 @@ export default function CompanyDetailPage() {
       .catch((err) => toast.error(getApiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [companyId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== "seeker" || !companyId) return;
+    companiesService
+      .followStatus(companyId)
+      .then(setFollowing)
+      .catch(() => setFollowing(false));
+  }, [isAuthenticated, user?.role, companyId]);
+
+  const toggleFollow = async () => {
+    if (!company) return;
+    setFollowBusy(true);
+    try {
+      if (following) {
+        await companiesService.unfollow(company.id);
+        setFollowing(false);
+        toast.success("Unfollowed company");
+      } else {
+        await companiesService.follow(company.id);
+        setFollowing(true);
+        toast.success("Following company");
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -68,12 +98,14 @@ export default function CompanyDetailPage() {
     isAuthenticated &&
     user?.role === "employer" &&
     user.id === company.owner_id;
+  const canFollow = isAuthenticated && user?.role === "seeker" && !isOwner;
 
   return (
     <div className="bg-surface min-h-screen">
       <div className="hero-gradient border-b border-default">
         <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="flex items-start gap-6">
             <EntityAvatar
               name={company.name}
               imageUrl={company.logo_url}
@@ -96,10 +128,23 @@ export default function CompanyDetailPage() {
               )}
               {company.location && (
                 <p className="mt-2 flex items-center gap-1 text-sm text-[#FDFDFD]/70">
-                  <MapPin className="h-4 w-4" /> {company.location}
+                  <MapPin className="h-4 w-4" aria-hidden="true" /> {company.location}
                 </p>
               )}
             </div>
+            </div>
+            {canFollow ? (
+              <Button
+                type="button"
+                variant={following ? "outline" : "default"}
+                loading={followBusy}
+                onClick={toggleFollow}
+                aria-pressed={following}
+                className="bg-white/95 text-[#0C44B7] hover:bg-white"
+              >
+                {following ? "Following ✓" : "Follow"}
+              </Button>
+            ) : null}
           </div>
         </div>
       </div>

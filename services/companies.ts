@@ -73,6 +73,36 @@ export const companiesService = {
     return data.company;
   },
 
+  async follow(id: number): Promise<{ following: boolean }> {
+    const { data } = await apiClient.post<{ following: boolean }>(
+      `/api/companies/${id}/follow`,
+    );
+    return data;
+  },
+
+  async unfollow(id: number): Promise<{ following: boolean }> {
+    const { data } = await apiClient.delete<{ following: boolean }>(
+      `/api/companies/${id}/follow`,
+    );
+    return data;
+  },
+
+  async followStatus(id: number): Promise<boolean> {
+    const { data } = await apiClient.get<{ following: boolean }>(
+      `/api/companies/${id}/follow`,
+    );
+    return Boolean(data.following);
+  },
+
+  async listFollowed(): Promise<Company[]> {
+    const { data } = await apiClient.get<{
+      followed_companies: { company?: Company }[];
+    }>("/api/me/followed-companies");
+    return (data.followed_companies || [])
+      .map((row) => row.company)
+      .filter((c): c is Company => Boolean(c));
+  },
+
   async exportCsv(): Promise<void> {
     const { downloadFromApi } = await import("@/lib/download");
     await downloadFromApi("/api/companies/export", "companies.csv");
