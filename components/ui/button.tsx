@@ -18,6 +18,12 @@ const buttonVariants = cva(
           "border-2 border-[#0C44B7] bg-transparent text-[#0C44B7] hover:bg-[#0C44B7]/10 dark:border-[#22d3ee] dark:text-[#22d3ee] dark:hover:bg-[#22d3ee]/10",
         ghost:
           "bg-transparent text-[#133099] hover:bg-surface-muted dark:text-[#e2e8f0] dark:hover:bg-white/5",
+        /** Solid light button for use on colorful gradient banners. */
+        onDark:
+          "border border-white/50 bg-white text-[#0C44B7] shadow-md hover:bg-[#FDFDFD] active:scale-[0.98]",
+        /** Muted outline for secondary actions / active state on gradient banners. */
+        onDarkOutline:
+          "border-2 border-white/80 bg-white/10 text-[#FDFDFD] shadow-none hover:bg-white/20 active:scale-[0.98]",
         destructive:
           "bg-gradient-to-r from-[#DA3753] to-[#F94D32] text-white shadow-md hover:opacity-95 active:scale-[0.98]",
       },
@@ -56,7 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => (
     <button
       ref={ref}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size }), className)}
       disabled={disabled || loading}
       {...props}
     >
