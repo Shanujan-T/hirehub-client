@@ -19,30 +19,23 @@ import { PortalLayout } from "@/components/layout/main-layout";
 import { ResumeUpload } from "@/components/resume-upload";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { SkillTagInput } from "@/components/skill-tag-input";
-
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
-
+import { PasswordInput } from "@/components/password-input";
 import { Label, Select } from "@/components/ui/form";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { Card, CardContent, CardHeader, CardTitle, Textarea } from "@/components/ui/card";
 import { LoadingState } from "@/app/_components/page-states";
-
 import { useAuth } from "@/providers/auth-provider";
-
 import authService from "@/services/auth";
-
+import aiService from "@/services/ai";
 import { EDUCATION_LEVELS, NOTIFY_VIA_OPTIONS } from "@/lib/constants";
-
 import { getApiErrorMessage } from "@/lib/api-client";
-
 import { resolveMediaUrl, formatLabel } from "@/lib/utils";
-
 import type { EducationLevel, NotifyVia, Skill } from "@/types";
 import dashboardService from "@/services/dashboard";
 import catalogService from "@/services/catalog";
+import companiesService from "@/services/companies";
+import { Sparkles } from "lucide-react";
 
 
 
@@ -81,6 +74,15 @@ function ProfileContent() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [resumePublic, setResumePublic] = useState(false);
   const [savingResumePublic, setSavingResumePublic] = useState(false);
+  const [aiResumeDraft, setAiResumeDraft] = useState("");
+  const [generatingResume, setGeneratingResume] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [disable2faPassword, setDisable2faPassword] = useState("");
+  const [saving2fa, setSaving2fa] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
+  const [followedCompanies, setFollowedCompanies] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   const {
 
@@ -118,10 +120,21 @@ function ProfileContent() {
       setWhatsappNumber(user.whatsapp_number ?? "");
       setResumePublic(Boolean(user.resume_public));
       setUsernameDraft(user.username ?? "");
+      setTwoFactorEnabled(Boolean(user.two_factor_enabled));
 
     }
 
   }, [user, reset]);
+
+  useEffect(() => {
+    if (user?.role !== "seeker") return;
+    companiesService
+      .listFollowed()
+      .then((rows) =>
+        setFollowedCompanies(rows.map((c) => ({ id: c.id, name: c.name }))),
+      )
+      .catch(() => setFollowedCompanies([]));
+  }, [user?.role]);
 
   const saveUsername = async () => {
     setSavingUsername(true);
@@ -241,6 +254,40 @@ function ProfileContent() {
 
   };
 
+  const generateAiResume = async () => {
+    setGeneratingResume(true);
+    try {
+      const text = await aiService.generateResume();
+      setAiResumeDraft(text);
+      toast.success("Resume draft generated — review before downloading.");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setGeneratingResume(false);
+    }
+  };
+
+  const downloadAiResume = () => {
+    if (!aiResumeDraft.trim()) return;
+    const blob = new Blob([aiResumeDraft], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${(user?.full_name || "resume").replace(/\s+/g, "-").toLowerCase()}-resume.md`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyAiResume = async () => {
+    if (!aiResumeDraft.trim()) return;
+    try {
+      await navigator.clipboard.writeText(aiResumeDraft);
+      toast.success("Resume draft copied");
+    } catch {
+      toast.error("Could not copy draft");
+    }
+  };
+
 
 
   const handleAvatarUpload = async (file: File) => {
@@ -308,6 +355,54 @@ function ProfileContent() {
       toast.error(getApiErrorMessage(err));
     } finally {
       setSavingNotify(false);
+    }
+  };
+
+  const enable2fa = async () => {
+    setSaving2fa(true);
+    try {
+      await authService.toggle2fa({ enabled: true });
+      await refreshProfile();
+      setTwoFactorEnabled(true);
+      toast.success("Two-factor authentication enabled");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSaving2fa(false);
+    }
+  };
+
+  const disable2fa = async () => {
+    if (!disable2faPassword) {
+      toast.error("Enter your current password to disable 2FA");
+      return;
+    }
+    setSaving2fa(true);
+    try {
+      await authService.toggle2fa({
+        enabled: false,
+        password: disable2faPassword,
+      });
+      await refreshProfile();
+      setTwoFactorEnabled(false);
+      setDisable2faPassword("");
+      toast.success("Two-factor authentication disabled");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSaving2fa(false);
+    }
+  };
+
+  const downloadMyData = async (format: "json" | "csv") => {
+    setExportingData(true);
+    try {
+      await authService.exportMyData(format);
+      toast.success(`Download started (${format.toUpperCase()})`);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setExportingData(false);
     }
   };
 
@@ -627,6 +722,96 @@ function ProfileContent() {
       )}
 
       <Card className="border-default bg-surface-card">
+        <CardHeader>
+          <CardTitle>Two-Factor Authentication</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-subtle text-sm">
+            When enabled, you will enter a 6-digit code after signing in with your password.
+          </p>
+          {twoFactorEnabled ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-heading">2FA is currently on</p>
+              <div>
+                <Label htmlFor="disable_2fa_password">Current password</Label>
+                <PasswordInput
+                  id="disable_2fa_password"
+                  value={disable2faPassword}
+                  onChange={(e) => setDisable2faPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Required to disable 2FA"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving2fa}
+                onClick={disable2fa}
+              >
+                {saving2fa ? "Updating..." : "Disable 2FA"}
+              </Button>
+            </div>
+          ) : (
+            <Button type="button" disabled={saving2fa} onClick={enable2fa}>
+              {saving2fa ? "Updating..." : "Enable 2FA"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-default bg-surface-card">
+        <CardHeader>
+          <CardTitle>Download my data</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={exportingData}
+            onClick={() => downloadMyData("json")}
+          >
+            Download JSON
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={exportingData}
+            onClick={() => downloadMyData("csv")}
+          >
+            Download CSV
+          </Button>
+        </CardContent>
+      </Card>
+
+      {user.role === "seeker" && (
+        <Card className="border-default bg-surface-card">
+          <CardHeader>
+            <CardTitle>Followed Companies</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {followedCompanies.length === 0 ? (
+              <p className="text-subtle text-sm">
+                You are not following any companies yet. Follow from a company profile page.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {followedCompanies.map((company) => (
+                  <li key={company.id}>
+                    <Link
+                      href={`/companies/${company.id}`}
+                      className="text-sm font-medium text-[var(--brand-blue)] hover:underline"
+                    >
+                      {company.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="border-default bg-surface-card">
 
         <CardHeader>
 
@@ -655,6 +840,42 @@ function ProfileContent() {
             </a>
 
           ) : null}
+
+          <div className="space-y-3 rounded-xl border border-default bg-surface-muted p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-heading">Generate resume with AI</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                loading={generatingResume}
+                onClick={() => void generateAiResume()}
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate draft
+              </Button>
+            </div>
+            <p className="text-subtle text-xs">
+              Builds a Markdown resume from your profile skills and details. Edit freely — nothing is saved until you download or upload a file.
+            </p>
+            {aiResumeDraft ? (
+              <>
+                <Textarea
+                  value={aiResumeDraft}
+                  onChange={(e) => setAiResumeDraft(e.target.value)}
+                  rows={12}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => void copyAiResume()}>
+                    Copy
+                  </Button>
+                  <Button type="button" size="sm" onClick={downloadAiResume}>
+                    Download .md
+                  </Button>
+                </div>
+              </>
+            ) : null}
+          </div>
 
           <ResumeUpload currentResumeUrl={user.resume_url} onUpload={handleResumeUpload} />
 
