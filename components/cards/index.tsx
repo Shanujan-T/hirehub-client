@@ -64,8 +64,10 @@ interface JobCardProps {
   job: Job;
   className?: string;
   showStatus?: boolean;
-  variant?: "default" | "compact";
+  variant?: "default" | "compact" | "list";
   hideCompanyVerified?: boolean;
+  /** Hide company avatar/thumbnail when the company is already shown in page context. */
+  hideCompanyAvatar?: boolean;
 }
 
 function SalaryDisplay({
@@ -92,6 +94,7 @@ export function JobCard({
   showStatus = true,
   variant = "default",
   hideCompanyVerified = false,
+  hideCompanyAvatar = false,
 }: JobCardProps) {
   const company = job.company;
 
@@ -106,7 +109,7 @@ export function JobCard({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <JobThumbnail job={job} />
+            {!hideCompanyAvatar ? <JobThumbnail job={job} /> : null}
             <div className="min-w-0">
               <h3 className="font-display text-base font-semibold text-heading group-hover:text-[var(--brand-blue)]">
                 {job.title}
@@ -132,14 +135,19 @@ export function JobCard({
     <Link
       href={`/jobs/${job.id}`}
       className={cn(
-        "group relative flex flex-col gap-4 overflow-hidden rounded-2xl glass-card p-5 card-hover",
-        "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:scale-x-0 before:bg-gradient-to-r before:from-[#22d3ee] before:via-[#AB2F74] before:to-[#F94D32] before:transition-transform before:duration-300 group-hover:before:scale-x-100",
+        "group relative flex flex-col gap-4 overflow-hidden",
+        variant === "list"
+          ? "rounded-xl border border-default border-l-[3px] border-l-[var(--brand-blue)] bg-surface p-4 transition-colors hover:border-[var(--brand-blue)]/45"
+          : [
+              "rounded-2xl glass-card p-5 card-hover",
+              "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:scale-x-0 before:bg-gradient-to-r before:from-[#22d3ee] before:via-[#AB2F74] before:to-[#F94D32] before:transition-transform before:duration-300 group-hover:before:scale-x-100",
+            ],
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <JobThumbnail job={job} />
+          {!hideCompanyAvatar ? <JobThumbnail job={job} /> : null}
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold text-heading group-hover:text-[var(--brand-blue)]">
               {job.title}
@@ -225,7 +233,7 @@ function JobThumbnail({ job, className }: { job: Job; className?: string }) {
     return (
       <div
         className={cn(
-          "relative size-16 shrink-0 overflow-hidden rounded-lg border border-default",
+          "relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-default bg-gray-50 dark:bg-gray-900",
           className,
         )}
       >
@@ -233,7 +241,7 @@ function JobThumbnail({ job, className }: { job: Job; className?: string }) {
         <img
           src={imageSrc}
           alt={job.title ? `Cover for ${job.title}` : "Job cover"}
-          className="h-full w-full object-cover"
+          className="max-h-full max-w-full object-contain"
         />
       </div>
     );
