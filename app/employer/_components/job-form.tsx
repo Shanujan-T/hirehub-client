@@ -458,7 +458,7 @@ export function JobForm({
           onFileChange={handleImageChange}
           dropzoneTitle="Add a cover image"
           dropzoneHint="JPG, PNG, or WEBP · max 5MB · optional"
-          previewAspectClass="aspect-[2/1] w-full object-cover"
+          previewAspectClass="mx-auto max-h-[320px] w-full object-contain bg-gray-50 dark:bg-gray-900"
           previewAlt="Job cover preview"
         />
       </FormGroup>
