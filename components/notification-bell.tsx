@@ -53,8 +53,15 @@ export function NotificationBell() {
         setOpen(false);
       }
     }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open]);
 
   const openPanel = () => {
@@ -100,19 +107,31 @@ export function NotificationBell() {
         type="button"
         onClick={openPanel}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-default bg-surface-card text-subtle transition-colors hover:text-heading"
-        aria-label="Notifications"
+        aria-label={
+          unreadCount > 0
+            ? `Notifications, ${unreadCount} unread`
+            : "Notifications"
+        }
         aria-expanded={open}
+        aria-haspopup="true"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="h-4 w-4" aria-hidden="true" />
         {unreadCount > 0 ? (
-          <span className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--brand-rose)] px-1 text-[10px] font-bold leading-4 text-white">
+          <span
+            className="absolute -right-1 -top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--brand-rose)] px-1 text-[10px] font-bold leading-4 text-white"
+            aria-hidden="true"
+          >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-default bg-surface-card shadow-xl">
+        <div
+          className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-default bg-surface-card shadow-xl"
+          role="dialog"
+          aria-label="Notifications panel"
+        >
           <div className="flex items-center justify-between border-b border-default px-3 py-2">
             <p className="text-sm font-semibold text-heading">Notifications</p>
             <div className="flex items-center gap-2">
