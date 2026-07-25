@@ -2,9 +2,10 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Users } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { CommunityCard } from "@/components/cards";
+import { NewCommunityDialog } from "@/components/community/new-community-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form";
@@ -23,6 +24,7 @@ function CommunitiesPage() {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<number | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const [q, setQ] = useState(searchParams.get("q") || "");
   const [type, setType] = useState(searchParams.get("type") || "");
@@ -125,11 +127,18 @@ function CommunitiesPage() {
   return (
     <div className="min-h-screen bg-surface transition-colors duration-300">
       <div className={cn("border-b border-default", PAGE_HEADER_BAND)}>
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-          <h1 className="text-heading text-3xl font-bold">Communities</h1>
-          <p className="text-subtle mt-1">
-            Join groups based on industry, location, profession, and interests
-          </p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6 lg:px-8">
+          <div>
+            <h1 className="text-heading text-3xl font-bold">Communities</h1>
+            <p className="text-subtle mt-1">
+              Join groups based on industry, location, profession, and interests
+            </p>
+          </div>
+          {isAuthenticated ? (
+            <Button type="button" onClick={() => setCreateOpen(true)} className="w-fit shrink-0">
+              <Plus className="h-4 w-4" aria-hidden="true" /> Create community
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -195,6 +204,12 @@ function CommunitiesPage() {
           </div>
         )}
       </div>
+
+      <NewCommunityDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={fetchCommunities}
+      />
     </div>
   );
 }
