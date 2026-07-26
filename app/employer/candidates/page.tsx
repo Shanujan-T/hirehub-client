@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label, Select } from "@/components/ui/form";
 import { Avatar } from "@/components/ui/shared";
+import { OpenToWorkBadge } from "@/components/open-to-work-badge";
 import { UserSkillBadge } from "@/components/user-skill-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
@@ -34,11 +35,15 @@ function CandidateCard({ candidate }: { candidate: CandidateUser }) {
             name={candidate.full_name}
             entityId={candidate.id}
             size="lg"
+            openToWork={Boolean(candidate.open_to_work)}
           />
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-heading hover:text-[var(--brand-blue)]">
-              {candidate.full_name}
-            </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-heading hover:text-[var(--brand-blue)]">
+                {candidate.full_name}
+              </h3>
+              {candidate.open_to_work ? <OpenToWorkBadge /> : null}
+            </div>
             {candidate.location && (
               <p className="text-subtle text-sm">{candidate.location}</p>
             )}
