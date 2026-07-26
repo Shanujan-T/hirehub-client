@@ -13,6 +13,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form";
+import { OpenToWorkBadge } from "@/components/open-to-work-badge";
 import { Avatar, StatusBadge } from "@/components/ui/shared";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { PageHeader } from "@/app/employer/_components/page-header";
@@ -218,12 +219,14 @@ function ApplicantRow({
             name={seeker?.full_name ?? "Candidate"}
             entityId={seeker?.id}
             size="lg"
+            openToWork={Boolean(seeker?.open_to_work)}
           />
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold text-heading">
                 {seeker?.full_name ?? "Unknown candidate"}
               </h3>
+              {seeker?.open_to_work ? <OpenToWorkBadge /> : null}
               <StatusBadge status={application.status} />
             </div>
             {application.ai_summary ? (
