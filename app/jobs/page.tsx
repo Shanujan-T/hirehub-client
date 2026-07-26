@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bookmark, Briefcase, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { FeaturedEmployerCard } from "@/components/featured-employer-card";
 import { SearchBar } from "@/components/search/search-bar";
 import { JobCard } from "@/components/cards";
 import { Button } from "@/components/ui/button";
@@ -337,6 +338,7 @@ function JobsPage() {
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
           <aside>
             <JobFiltersPanel />
+            <FeaturedEmployerCard />
             <Suspense fallback={null}>
               <SaveSearchPanel />
             </Suspense>
