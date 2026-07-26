@@ -62,6 +62,10 @@ export interface User {
   created_at: string | null;
   skills?: UserSkill[];
   interests?: UserInterest[];
+  experiences?: Experience[];
+  educations?: Education[];
+  recommendations?: Recommendation[];
+  connection?: ConnectionStatus;
 }
 
 export interface Company {
@@ -332,6 +336,32 @@ export interface ConnectionStatus {
   is_requester?: boolean;
 }
 
+export interface DiscoverUser {
+  id: number;
+  full_name: string;
+  avatar_url: string | null;
+  username: string | null;
+  role: UserRole;
+  location: string | null;
+  headline: string | null;
+  open_to_work?: boolean;
+}
+
+export interface DiscoverUsersResponse {
+  users: DiscoverUser[];
+  page: number;
+  per_page: number;
+  total: number;
+  has_more: boolean;
+}
+
+export interface DiscoverUsersParams {
+  search?: string;
+  role?: "seeker" | "employer" | "";
+  page?: number;
+  per_page?: number;
+}
+
 export interface Recommendation {
   id: number;
   recommended_user_id: number;
@@ -543,15 +573,21 @@ export interface ConversationParticipantSummary {
 
 export interface Conversation {
   id: number;
-  application_id: number;
+  application_id: number | null;
+  connection_id?: number | null;
   employer_id: number;
   seeker_id: number;
+  context?: "application" | "connection" | "unknown";
   created_at: string | null;
   application?: Application | null;
   other_party?: ConversationParticipantSummary | null;
   job_title?: string | null;
   last_message?: Message | null;
   unread_count?: number;
+  /** When the other participant last read this conversation (UTC ISO). */
+  other_last_read_at?: string | null;
+  employer_last_read_at?: string | null;
+  seeker_last_read_at?: string | null;
 }
 
 export interface ConversationDetail {
@@ -564,12 +600,14 @@ export interface Message {
   conversation_id: number;
   sender_id: number;
   body: string;
+  attachment_url?: string | null;
   read_at: string | null;
   created_at: string | null;
 }
 
 export interface SendMessagePayload {
-  body: string;
+  body?: string;
+  image?: File | null;
 }
 
 export interface ReportDetail {
