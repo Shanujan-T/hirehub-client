@@ -321,26 +321,45 @@ export default function JobDetailPage() {
 
                 {isAuthenticated &&
                 user?.role === "seeker" &&
-                job.skill_gap &&
-                job.skill_gap.length > 0 &&
+                job.skill_gap != null &&
                 (job.required_skills_count ?? 0) > 0 ? (
                   <div className="rounded-xl border border-default bg-surface-muted px-4 py-3 text-sm">
-                    <p className="text-heading">
-                      You have {job.matched_skills_count ?? 0} of{" "}
-                      {job.required_skills_count} required skills — missing:{" "}
-                      {job.skill_gap
-                        .map((s) => s.name)
-                        .filter(Boolean)
-                        .join(", ")}
-                      .
-                    </p>
-                    <p className="text-subtle mt-1">
-                      You can still apply.{" "}
-                      <Link href="/profile" className="text-[var(--brand-blue)] hover:underline">
-                        Add skills on your profile
-                      </Link>{" "}
-                      to strengthen your match.
-                    </p>
+                    {job.skill_gap.length === 0 ? (
+                      <p className="text-heading">
+                        <span className="mr-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_14%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--brand-blue)]">
+                          100% match
+                        </span>
+                        You match all {job.required_skills_count} required skills
+                        for this role.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-heading">
+                          <span className="mr-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_14%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--brand-blue)]">
+                            {job.match_percent ??
+                              Math.round(
+                                (100 * (job.matched_skills_count ?? 0)) /
+                                  (job.required_skills_count || 1),
+                              )}
+                            % match
+                          </span>
+                          You have {job.matched_skills_count ?? 0} of{" "}
+                          {job.required_skills_count} required skills — missing:{" "}
+                          {job.skill_gap
+                            .map((s) => s.name)
+                            .filter(Boolean)
+                            .join(", ")}
+                          .
+                        </p>
+                        <p className="text-subtle mt-1">
+                          You can still apply.{" "}
+                          <Link href="/profile" className="text-[var(--brand-blue)] hover:underline">
+                            Add skills on your profile
+                          </Link>{" "}
+                          to strengthen your match.
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : null}
               </div>
