@@ -272,7 +272,7 @@ function CompanyProfileContent() {
             <FormGroup label="Company name">
               <Input
                 {...register("name")}
-                placeholder="Acme Inc."
+                placeholder="e.g. Lanka Digital Labs"
                 error={errors.name?.message}
               />
             </FormGroup>
@@ -306,7 +306,7 @@ function CompanyProfileContent() {
               <FormGroup label="Location">
                 <Input
                   {...register("location")}
-                  placeholder="e.g. San Francisco, CA"
+                  placeholder="e.g. Colombo"
                   error={errors.location?.message}
                 />
               </FormGroup>

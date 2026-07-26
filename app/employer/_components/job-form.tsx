@@ -375,7 +375,7 @@ export function JobForm({
         <FormGroup label="Location">
           <Input
             {...register("location")}
-            placeholder="e.g. Remote, New York"
+            placeholder="e.g. Colombo, Kandy, or Remote"
             error={errors.location?.message}
           />
         </FormGroup>
