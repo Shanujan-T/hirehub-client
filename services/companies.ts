@@ -21,6 +21,21 @@ export const companiesService = {
     return data.company;
   },
 
+  async getEmployees(id: number) {
+    const { data } = await apiClient.get<{
+      employees: import("@/types").CompanyEmployee[];
+      count: number;
+    }>(`/api/companies/${id}/employees`);
+    return data.employees;
+  },
+
+  async getPosts(id: number) {
+    const { data } = await apiClient.get<{ posts: import("@/types").Post[] }>(
+      `/api/companies/${id}/posts`,
+    );
+    return data.posts;
+  },
+
   async getMy(): Promise<Company> {
     const { data } = await apiClient.get<{ company: Company }>(
       "/api/my/company",
