@@ -15,6 +15,7 @@ import { PasswordInput } from "@/components/password-input";
 import { FormGroup } from "@/app/_components/page-states";
 import { useAuth } from "@/providers/auth-provider";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { getDashboardPath } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -54,7 +55,7 @@ function LoginForm() {
         return;
       }
       toast.success("Welcome back!");
-      router.push("/");
+      router.push(getDashboardPath(result.user.role));
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {
@@ -66,9 +67,9 @@ function LoginForm() {
     if (!tempToken) return;
     setSubmitting(true);
     try {
-      await verify2fa({ temp_token: tempToken, code: data.code });
+      const user = await verify2fa({ temp_token: tempToken, code: data.code });
       toast.success("Welcome back!");
-      router.push("/");
+      router.push(getDashboardPath(user.role));
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     } finally {
