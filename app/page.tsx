@@ -94,43 +94,118 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-white/40 dark:bg-[#050505]/65" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-indigo-50/60 to-[var(--surface)] dark:via-transparent dark:to-[var(--surface)]" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-3xl text-center text-[#041b5f] dark:text-white">
-            <div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-[#0c44b7]/20 bg-white/80 px-5 py-2 text-sm font-semibold text-[#041b5f] backdrop-blur-md dark:border-white/20 dark:bg-white/10 dark:text-white">
-              <MapPin className="h-4 w-4 text-cyan-600 dark:text-[#22d3ee]" />
-              Local jobs. Real opportunities.
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            {/* Left: copy + search */}
+            <div className="text-center text-[#041b5f] lg:text-left dark:text-white">
+              <div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-[#0c44b7]/20 bg-white/80 px-5 py-2 text-sm font-semibold text-[#041b5f] backdrop-blur-md dark:border-white/20 dark:bg-white/10 dark:text-white">
+                <MapPin className="h-4 w-4 text-cyan-600 dark:text-[#22d3ee]" />
+                Local jobs. Real opportunities.
+              </div>
+              <h1 className="animate-fade-up animate-fade-up-delay-1 font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+                Find Work That{" "}
+                <span className="brand-gradient-text">Fits Your Skills</span>
+              </h1>
+              <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-lg text-[#1e293b]/90 lg:mx-0 dark:text-white/85">
+                HireHub connects local talent with top employers. Search, apply, and grow — all in one beautiful platform.
+              </p>
+              <div className="animate-fade-up animate-fade-up-delay-3 mx-auto mt-8 w-full max-w-xl lg:mx-0 lg:max-w-none">
+                <SearchBar variant="hero" />
+              </div>
+              <div className="animate-fade-up animate-fade-up-delay-4 mt-7 flex flex-wrap justify-center gap-4 lg:justify-start">
+                <Link
+                  href="/auth/register"
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "ghost" }),
+                    "rounded-xl",
+                    BTN_BRAND_GRADIENT,
+                  )}
+                >
+                  Start Free <ArrowRight className="h-5 w-5" />
+                </Link>
+                <Link
+                  href="/jobs"
+                  className={cn(
+                    buttonVariants({ size: "lg", variant: "ghost" }),
+                    "rounded-xl",
+                    BTN_CYAN_OUTLINE,
+                  )}
+                >
+                  Browse All Jobs
+                </Link>
+              </div>
             </div>
-            <h1 className="animate-fade-up animate-fade-up-delay-1 font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              Find Work That{" "}
-              <span className="brand-gradient-text">Fits Your Skills</span>
-            </h1>
-            <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-6 max-w-2xl text-lg text-[#1e293b]/90 dark:text-white/85">
-              HireHub connects local talent with top employers. Search, apply, and grow — all in one beautiful platform.
-            </p>
-            <div className="animate-fade-up animate-fade-up-delay-3 mx-auto mt-10 w-full max-w-3xl">
-              <SearchBar variant="hero" />
-            </div>
-            <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                href="/auth/register"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "ghost" }),
-                  "rounded-xl",
-                  BTN_BRAND_GRADIENT,
-                )}
-              >
-                Start Free <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                href="/jobs"
-                className={cn(
-                  buttonVariants({ size: "lg", variant: "ghost" }),
-                  "rounded-xl",
-                  BTN_CYAN_OUTLINE,
-                )}
-              >
-                Browse All Jobs
-              </Link>
+
+            {/* Right: skill-match visual anchor */}
+            <div className="animate-fade-up animate-fade-up-delay-5 relative mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
+              <div
+                className="pointer-events-none absolute -right-6 -top-8 h-40 w-40 rounded-full opacity-50 blur-3xl dark:opacity-40"
+                style={{ background: "#22d3ee" }}
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute -bottom-10 -left-8 h-44 w-44 rounded-full opacity-40 blur-3xl dark:opacity-35"
+                style={{ background: "#e040fb" }}
+                aria-hidden
+              />
+
+              <div className="animate-hero-float relative">
+                <div className="relative z-10 rounded-2xl border border-white/60 bg-white/90 p-5 shadow-[0_24px_60px_-12px_rgba(4,27,95,0.28)] backdrop-blur-md dark:border-white/10 dark:bg-[#0c0c16]/90 dark:shadow-[0_24px_60px_-12px_rgba(0,0,0,0.65)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[#0C44B7] dark:text-[#22d3ee]">
+                        Skill match
+                      </p>
+                      <h2 className="mt-1 font-display text-lg font-bold text-heading">
+                        Data Analyst
+                      </h2>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-sm text-subtle">
+                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                        Lanka Digital Labs
+                      </p>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gradient-to-r from-[#0C44B7] to-[#22d3ee] px-2.5 py-1 text-xs font-bold text-white shadow-sm">
+                      <Sparkles className="h-3 w-3" />
+                      85% match
+                    </span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {["SQL", "Python", "Tableau"].map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-full border border-default bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-heading"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-default pt-3 text-xs text-subtle">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Colombo
+                    </span>
+                    <span className="font-medium text-heading">Full-time · Remote</span>
+                  </div>
+                </div>
+
+                {/* Secondary offset card */}
+                <div
+                  className="absolute -bottom-6 -left-4 z-0 hidden w-[85%] -rotate-3 rounded-xl border border-white/50 bg-white/70 p-3 shadow-lg backdrop-blur-sm sm:block dark:border-white/10 dark:bg-[#12121e]/75"
+                  aria-hidden
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#5A299A] to-[#AB2F74]">
+                      <Briefcase className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-heading">
+                        Frontend Engineer
+                      </p>
+                      <p className="text-[10px] text-subtle">72% skill match</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
