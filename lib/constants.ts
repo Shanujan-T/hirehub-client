@@ -100,13 +100,7 @@ export const FEED_POST_TYPES = [
 
 export const MEDIA_TYPES = ["image", "pdf", "video"] as const;
 
-export const REACTION_TYPES = [
-  "like",
-  "love",
-  "celebrate",
-  "insightful",
-  "support",
-] as const;
+export const REACTION_TYPES = ["like"] as const;
 
 export const REPORT_TARGET_TYPES = [
   "post",
