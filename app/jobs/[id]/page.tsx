@@ -52,6 +52,7 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [similarJobs, setSimilarJobs] = useState<Job[]>([]);
+  const [alsoAppliedJobs, setAlsoAppliedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,6 +81,18 @@ export default function JobDetailPage() {
       .getSimilar(jobId)
       .then(setSimilarJobs)
       .catch(() => setSimilarJobs([]));
+
+    jobsService
+      .getAlsoApplied(jobId)
+      .then((result) => {
+        // Only show behavioral co-occurrence; skill fallback is covered by Similar Jobs.
+        if (result.source === "also_applied" && result.jobs.length > 0) {
+          setAlsoAppliedJobs(result.jobs);
+        } else {
+          setAlsoAppliedJobs([]);
+        }
+      })
+      .catch(() => setAlsoAppliedJobs([]));
   }, [jobId]);
 
   const handleSaveToggle = async () => {
@@ -479,6 +492,32 @@ export default function JobDetailPage() {
             </aside>
           </div>
         </section>
+
+        {alsoAppliedJobs.length > 0 ? (
+          <>
+            <hr className="my-12 border-t border-default" />
+            <section
+              aria-label="People also applied"
+              className={cn(
+                "mt-16 rounded-2xl bg-surface-muted px-4 py-12 sm:px-6",
+              )}
+            >
+              <div className="mb-6">
+                <h2 className="text-heading text-2xl font-bold">
+                  People who applied here also applied to
+                </h2>
+                <p className="text-subtle mt-1 text-sm">
+                  Roles frequently pursued by applicants to this job
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {alsoAppliedJobs.map((related) => (
+                  <JobCard key={related.id} job={related} variant="compact" />
+                ))}
+              </div>
+            </section>
+          </>
+        ) : null}
 
         {similarJobs.length > 0 ? (
           <>
