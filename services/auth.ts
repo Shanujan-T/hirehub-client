@@ -52,6 +52,14 @@ export const authService = {
     return data.user;
   },
 
+  async toggleOpenToWork(enabled: boolean): Promise<User> {
+    const { data } = await apiClient.patch<{ user: User; message: string }>(
+      "/api/me/open-to-work",
+      { enabled },
+    );
+    return data.user;
+  },
+
   async exportMyData(format: "json" | "csv" = "json"): Promise<void> {
     if (format === "csv") {
       const { downloadFromApi } = await import("@/lib/download");
