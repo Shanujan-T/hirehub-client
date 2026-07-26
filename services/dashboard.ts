@@ -1,5 +1,10 @@
 import apiClient from "@/lib/api-client";
-import type { ActivityItem, DashboardData, SeekerStats } from "@/types";
+import type {
+  ActivityItem,
+  DashboardData,
+  ProfileViewStats,
+  SeekerStats,
+} from "@/types";
 
 export const dashboardService = {
   async get(): Promise<DashboardData> {
@@ -12,6 +17,13 @@ export const dashboardService = {
   async getStats(): Promise<SeekerStats> {
     const { data } = await apiClient.get<{ stats: SeekerStats }>("/api/me/stats");
     return data.stats;
+  },
+
+  async getProfileViews(): Promise<ProfileViewStats> {
+    const { data } = await apiClient.get<{ profile_views: ProfileViewStats }>(
+      "/api/me/profile-views",
+    );
+    return data.profile_views;
   },
 
   async getActivity(): Promise<ActivityItem[]> {
