@@ -22,6 +22,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+import { OpenToWorkBadge } from "@/components/open-to-work-badge";
 import { Avatar, Badge } from "@/components/ui/shared";
 
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
@@ -287,24 +288,21 @@ function CandidateProfileContent() {
             <CardContent className="flex gap-5 p-6">
 
               <Avatar
-
                 src={candidate.avatar_url}
-
                 name={candidate.full_name}
-
                 entityId={candidate.id}
-
                 size="lg"
-
+                openToWork={Boolean(candidate.open_to_work)}
               />
 
               <div>
 
-                <h2 className="font-display text-xl font-bold text-heading">
-
-                  {candidate.full_name}
-
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-xl font-bold text-heading">
+                    {candidate.full_name}
+                  </h2>
+                  {candidate.open_to_work ? <OpenToWorkBadge /> : null}
+                </div>
 
                 {candidate.education_level && (
 
