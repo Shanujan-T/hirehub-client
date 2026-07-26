@@ -31,8 +31,8 @@ export function formatDate(
   options?: Intl.DateTimeFormatOptions,
 ): string {
   if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
+  const date = parseApiDate(value);
+  if (!date) return "—";
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
@@ -41,11 +41,38 @@ export function formatDate(
   });
 }
 
+/**
+ * Parse API timestamps. Naive ISO datetimes (no Z/offset) are treated as UTC,
+ * matching backend storage. Date-only strings stay calendar dates.
+ */
+export function parseApiDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  // Already timezone-aware
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // Date-only YYYY-MM-DD — keep as local calendar date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const d = new Date(`${trimmed}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  // Naive datetime → UTC
+  const asUtc = /T/.test(trimmed) ? `${trimmed}Z` : trimmed;
+  const d = new Date(asUtc);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /** Short relative time for activity feeds, e.g. "2 days ago". */
 export function formatRelativeTime(value: string | null | undefined): string {
   if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = parseApiDate(value);
+  if (!date) return "";
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.floor(diffMs / 60_000);
   if (minutes < 1) return "Just now";
@@ -56,6 +83,16 @@ export function formatRelativeTime(value: string | null | undefined): string {
   if (days === 1) return "1 day ago";
   if (days < 7) return `${days} days ago`;
   return formatDate(value);
+}
+
+/** Compact clock time for read receipts, e.g. "2:45 PM". */
+export function formatClockTime(value: string | null | undefined): string {
+  const date = parseApiDate(value);
+  if (!date) return "";
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export function formatSalary(
