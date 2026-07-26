@@ -97,6 +97,17 @@ export function JobCard({
   hideCompanyAvatar = false,
 }: JobCardProps) {
   const company = job.company;
+  const required =
+    job.required_skills_count ?? job.skills?.length ?? 0;
+  const matched =
+    job.matched_skills_count ?? job.matched_skills?.length ?? 0;
+  const matchPercent =
+    job.match_percent != null
+      ? job.match_percent
+      : required > 0 &&
+          (job.matched_skills != null || job.matched_skills_count != null)
+        ? Math.round((matched / required) * 100)
+        : null;
 
   if (variant === "compact") {
     return (
@@ -160,7 +171,14 @@ export function JobCard({
             </p>
           </div>
         </div>
-        {showStatus && <StatusBadge status={job.status} />}
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          {showStatus && <StatusBadge status={job.status} />}
+          {matchPercent != null ? (
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-blue)_14%,transparent)] px-2 py-0.5 text-xs font-semibold text-[var(--brand-blue)]">
+              {matchPercent}% match
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-subtle">
