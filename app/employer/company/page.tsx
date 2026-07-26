@@ -69,8 +69,8 @@ function FeaturedPlacementCard({
       onUpdated(updated);
       toast.success(
         active
-          ? "Featured placement renewed for 30 days."
-          : "Featured Employer placement activated for 30 days.",
+          ? "Hiring Now placement renewed for 30 days."
+          : "Hiring Now placement activated for 30 days.",
       );
     } catch (err) {
       toast.error(getApiErrorMessage(err));
@@ -84,7 +84,7 @@ function FeaturedPlacementCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-5 w-5 text-[var(--brand-blue)]" />
-          Feature your company
+          Get listed in Hiring Now
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -92,8 +92,8 @@ function FeaturedPlacementCard({
           <div className="rounded-xl border border-default bg-surface-muted p-4 text-sm">
             <p className="text-heading font-medium">Verification required</p>
             <p className="text-subtle mt-1">
-              Only verified companies can activate a Featured Employer slot on the
-              Jobs browse page. Ask an admin to verify {company.name} first.
+              Only verified companies can appear in Hiring Now on the Jobs browse
+              page. Ask an admin to verify {company.name} first.
             </p>
           </div>
         ) : (
@@ -103,7 +103,7 @@ function FeaturedPlacementCard({
                 <>
                   Status:{" "}
                   <span className="font-medium text-heading">
-                    Active until {until}
+                    In Hiring Now until {until}
                   </span>
                   {daysLeft != null ? (
                     <span> ({daysLeft} day{daysLeft === 1 ? "" : "s"} left)</span>
@@ -113,7 +113,7 @@ function FeaturedPlacementCard({
                 <>
                   Status:{" "}
                   <span className="font-medium text-heading">
-                    Not currently featured
+                    Not listed in Hiring Now
                   </span>
                 </>
               )}
@@ -127,8 +127,9 @@ function FeaturedPlacementCard({
               />
             </FormGroup>
             <p className="text-subtle text-xs">
-              Shown in the Jobs page sidebar. Leave blank to auto-generate a line
-              from your open roles. Demo mode activates without payment.
+              Shown under Hiring Now in the Jobs page sidebar. Leave blank to
+              auto-generate a line from your open roles. Demo mode activates
+              without payment.
             </p>
             <Button type="button" loading={featuring} onClick={() => void activate()}>
               {active ? "Renew for 30 days" : "Activate for 30 days"}

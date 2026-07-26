@@ -52,12 +52,8 @@ export function FeaturedEmployerCard() {
 
   return (
     <div className="relative mt-4 rounded-2xl border border-default bg-surface-card p-4">
-      <span className="absolute right-3 top-3 text-[10px] font-semibold uppercase tracking-wide text-subtle">
-        Featured
-      </span>
-
-      <h3 className="text-heading pr-14 text-sm font-bold uppercase tracking-wide">
-        Featured Employer
+      <h3 className="text-heading text-sm font-bold uppercase tracking-wide">
+        Hiring Now
       </h3>
 
       <div className="mt-3 flex items-start gap-3">
