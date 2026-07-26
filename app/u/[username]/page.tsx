@@ -182,6 +182,15 @@ export default function PublicSeekerProfilePage() {
                       </Button>
                     )}
                   </div>
+                ) : !isAuthenticated ? (
+                  <div className="mt-3">
+                    <Link
+                      href="/auth/login"
+                      className={buttonVariants({ size: "sm" })}
+                    >
+                      Sign in to Connect
+                    </Link>
+                  </div>
                 ) : null}
               </div>
             </div>
