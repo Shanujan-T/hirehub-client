@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2 } from "lucide-react";
+import { Building2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,6 +19,7 @@ import { PageHeader } from "@/app/employer/_components/page-header";
 import { AvatarUpload } from "@/components/avatar-upload";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { formatDate, parseApiDate } from "@/lib/utils";
 import type { Company } from "@/types";
 
 const companySchema = z.object({
@@ -34,6 +35,110 @@ const companySchema = z.object({
 });
 
 type CompanyForm = z.infer<typeof companySchema>;
+
+function FeaturedPlacementCard({
+  company,
+  onUpdated,
+}: {
+  company: Company;
+  onUpdated: (company: Company) => void;
+}) {
+  const [pitch, setPitch] = useState(company.featured_pitch ?? "");
+  const [featuring, setFeaturing] = useState(false);
+  const active = Boolean(company.is_featured);
+  const until = company.featured_until
+    ? formatDate(company.featured_until)
+    : null;
+  const daysLeft = (() => {
+    const end = parseApiDate(company.featured_until);
+    if (!end) return null;
+    return Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86_400_000));
+  })();
+
+  useEffect(() => {
+    setPitch(company.featured_pitch ?? "");
+  }, [company.featured_pitch]);
+
+  const activate = async () => {
+    setFeaturing(true);
+    try {
+      const updated = await companiesService.feature(company.id, {
+        days: 30,
+        featured_pitch: pitch.trim() || undefined,
+      });
+      onUpdated(updated);
+      toast.success(
+        active
+          ? "Featured placement renewed for 30 days."
+          : "Featured Employer placement activated for 30 days.",
+      );
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setFeaturing(false);
+    }
+  };
+
+  return (
+    <Card className="border-default bg-surface-card mt-6 max-w-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Sparkles className="h-5 w-5 text-[var(--brand-blue)]" />
+          Feature your company
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!company.is_verified ? (
+          <div className="rounded-xl border border-default bg-surface-muted p-4 text-sm">
+            <p className="text-heading font-medium">Verification required</p>
+            <p className="text-subtle mt-1">
+              Only verified companies can activate a Featured Employer slot on the
+              Jobs browse page. Ask an admin to verify {company.name} first.
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-subtle text-sm">
+              {active && until ? (
+                <>
+                  Status:{" "}
+                  <span className="font-medium text-heading">
+                    Active until {until}
+                  </span>
+                  {daysLeft != null ? (
+                    <span> ({daysLeft} day{daysLeft === 1 ? "" : "s"} left)</span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  Status:{" "}
+                  <span className="font-medium text-heading">
+                    Not currently featured
+                  </span>
+                </>
+              )}
+            </p>
+            <FormGroup label="Promotional line (optional, max 100 characters)">
+              <Input
+                value={pitch}
+                maxLength={100}
+                onChange={(e) => setPitch(e.target.value)}
+                placeholder='e.g. "Now hiring 5 roles — apply today."'
+              />
+            </FormGroup>
+            <p className="text-subtle text-xs">
+              Shown in the Jobs page sidebar. Leave blank to auto-generate a line
+              from your open roles. Demo mode activates without payment.
+            </p>
+            <Button type="button" loading={featuring} onClick={() => void activate()}>
+              {active ? "Renew for 30 days" : "Activate for 30 days"}
+            </Button>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function CompanyProfileContent() {
   const router = useRouter();
@@ -243,6 +348,10 @@ function CompanyProfileContent() {
           </form>
         </CardContent>
       </Card>
+
+      {!isNew && company ? (
+        <FeaturedPlacementCard company={company} onUpdated={setCompany} />
+      ) : null}
     </>
   );
 }
