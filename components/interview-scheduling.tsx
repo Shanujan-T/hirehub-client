@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/form";
 import applicationsService from "@/services/applications";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatDate } from "@/lib/utils";
+import { formatDate, parseApiDate } from "@/lib/utils";
 import type { Application, Interview } from "@/types";
 
 function toLocalDatetimeValue(iso?: string): string {
   if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = parseApiDate(iso);
+  if (!date) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
