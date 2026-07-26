@@ -31,7 +31,7 @@ function MessagesContent() {
       <div>
         <h1 className="font-display text-3xl font-extrabold text-heading">Messages</h1>
         <p className="text-subtle mt-1">
-          Conversations tied to your job applications
+          Application threads and messages with your connections
         </p>
       </div>
       <ConversationInbox conversations={conversations} />
