@@ -56,6 +56,8 @@ export interface User {
   avatar_url: string | null;
   username?: string | null;
   two_factor_enabled?: boolean;
+  open_to_work?: boolean;
+  profile_view_count?: number;
   is_active: boolean;
   created_at: string | null;
   skills?: UserSkill[];
@@ -260,6 +262,7 @@ export interface Post {
   id: number;
   author_id: number;
   community_id: number | null;
+  company_id?: number | null;
   title: string;
   body: string;
   type: PostType;
@@ -268,13 +271,112 @@ export interface Post {
   image_url: string | null;
   created_at: string | null;
   author?: PostAuthorSummary;
+  company?: { id: number; name: string; logo_url: string | null } | null;
   comments?: Comment[];
   media?: PostMedia[];
   hashtags?: Hashtag[];
   mentions?: PostMention[];
   reaction_count?: number;
+  like_count?: number;
   comment_count?: number;
+  repost_count?: number;
+  liked_by_me?: boolean;
   reactions_summary?: Record<string, number>;
+  my_reaction?: string | null;
+}
+
+export interface Experience {
+  id: number;
+  user_id: number;
+  job_title: string;
+  company_name: string;
+  location: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  description: string | null;
+  created_at: string | null;
+}
+
+export interface Education {
+  id: number;
+  user_id: number;
+  institution: string;
+  degree: string;
+  field_of_study: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string | null;
+}
+
+export interface Connection {
+  id: number;
+  requester_id: number;
+  recipient_id: number;
+  status: "pending" | "accepted" | "declined";
+  created_at: string | null;
+  other_user?: {
+    id: number;
+    full_name: string;
+    avatar_url: string | null;
+    username?: string | null;
+    role?: string;
+    location?: string | null;
+  } | null;
+  requester?: { id: number; full_name: string; avatar_url: string | null; username?: string | null } | null;
+  recipient?: { id: number; full_name: string; avatar_url: string | null; username?: string | null } | null;
+}
+
+export interface ConnectionStatus {
+  status: "none" | "pending" | "accepted" | "declined" | "self";
+  connection_id: number | null;
+  is_requester?: boolean;
+}
+
+export interface Recommendation {
+  id: number;
+  recommended_user_id: number;
+  author_name: string;
+  author_email: string;
+  author_title: string | null;
+  content: string | null;
+  status: "pending" | "approved" | "declined";
+  token?: string;
+  submit_path?: string;
+  created_at: string | null;
+  submitted_at?: string | null;
+  recommended_user?: {
+    id: number;
+    full_name: string;
+    username?: string | null;
+  } | null;
+}
+
+export interface Repost {
+  id: number;
+  original_post_id: number;
+  reposted_by: number;
+  comment: string | null;
+  created_at: string | null;
+  is_repost?: boolean;
+  reposter?: PostAuthorSummary | null;
+  original_post?: Post;
+}
+
+export interface FeedItem {
+  kind: "post" | "repost";
+  created_at: string | null;
+  post?: Post;
+  repost?: Repost;
+}
+
+export interface CompanyEmployee {
+  id: number;
+  full_name: string;
+  avatar_url: string | null;
+  title: string;
+  username?: string | null;
+  role?: string;
+  is_owner?: boolean;
 }
 
 export interface CommentAuthorSummary {
@@ -359,8 +461,13 @@ export interface PublicSeekerProfile {
     verified: boolean;
     endorsement_count?: number;
   }[];
+  experiences?: Experience[];
+  educations?: Education[];
+  recommendations?: Recommendation[];
+  connection?: ConnectionStatus;
   resume_url: string | null;
   resume_public: boolean;
+  open_to_work?: boolean;
 }
 
 export interface JobTemplate {
@@ -567,6 +674,14 @@ export interface SeekerStats {
   applications_sent: number;
   jobs_saved: number;
   communities_joined: number;
+  profile_views?: number;
+}
+
+export interface ProfileViewStats {
+  total: number;
+  views_this_week: number;
+  views_last_week: number;
+  views_last_30_days: number;
 }
 
 export interface ActivityItem {
@@ -845,6 +960,7 @@ export interface CreatePostPayload {
   body: string;
   type?: PostType;
   community_id?: number;
+  company_id?: number;
   job_id?: number;
   link_url?: string;
   hashtags?: string[];
@@ -937,7 +1053,7 @@ export interface UpdateReferralStatusPayload {
 }
 
 export interface AddReactionPayload {
-  reaction_type: ReactionType;
+  reaction_type?: ReactionType;
 }
 
 export interface PatchJobStatusPayload {
