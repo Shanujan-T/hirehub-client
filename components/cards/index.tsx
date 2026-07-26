@@ -229,7 +229,9 @@ function CompanyAvatar({ company }: { company?: Company }) {
 
 function JobThumbnail({ job, className }: { job: Job; className?: string }) {
   const imageSrc = resolveMediaUrl(job.image_url);
-  if (imageSrc) {
+  const [failed, setFailed] = useState(false);
+
+  if (imageSrc && !failed) {
     return (
       <div
         className={cn(
@@ -242,6 +244,7 @@ function JobThumbnail({ job, className }: { job: Job; className?: string }) {
           src={imageSrc}
           alt={job.title ? `Cover for ${job.title}` : "Job cover"}
           className="max-h-full max-w-full object-contain"
+          onError={() => setFailed(true)}
         />
       </div>
     );
