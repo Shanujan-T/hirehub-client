@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Briefcase, Bookmark, FileText, Sparkles, Users } from "lucide-react";
+import { Briefcase, Bookmark, Eye, FileText, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { OnboardingChecklistCard } from "@/components/dashboard/onboarding-checklist-card";
@@ -23,6 +23,7 @@ import { getApiErrorMessage } from "@/lib/api-client";
 import type {
   ActivityItem,
   Job,
+  ProfileViewStats,
   SavedSearch,
   SeekerDashboard,
   SeekerStats,
@@ -32,6 +33,7 @@ function SeekerDashboardContent() {
   const router = useRouter();
   const [data, setData] = useState<SeekerDashboard | null>(null);
   const [stats, setStats] = useState<SeekerStats | null>(null);
+  const [profileViews, setProfileViews] = useState<ProfileViewStats | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
@@ -42,13 +44,15 @@ function SeekerDashboardContent() {
     Promise.all([
       dashboardService.get(),
       dashboardService.getStats(),
+      dashboardService.getProfileViews().catch(() => null),
       dashboardService.getActivity(),
       jobsService.list({ sort: "recent", limit: 5, status: "open" }),
       savedSearchesService.list(),
     ])
-      .then(([dashboard, seekerStats, seekerActivity, jobs, searches]) => {
+      .then(([dashboard, seekerStats, views, seekerActivity, jobs, searches]) => {
         if (dashboard.role === "seeker") setData(dashboard);
         setStats(seekerStats);
+        setProfileViews(views);
         setActivity(seekerActivity);
         setRecentJobs(jobs);
         setSavedSearches(searches);
@@ -103,6 +107,18 @@ function SeekerDashboardContent() {
   const incompleteItems = checklist.filter((item) => !item.completed);
   const hasSkills = checklist.find((item) => item.key === "has_skills")?.completed ?? true;
 
+  const totalProfileViews = profileViews?.total ?? stats.profile_views ?? 0;
+  const viewsThisWeek = profileViews?.views_this_week ?? 0;
+  const viewsLastWeek = profileViews?.views_last_week ?? 0;
+  let profileViewsHint: string | null = null;
+  if (totalProfileViews > 0 && viewsThisWeek > 0) {
+    if (viewsThisWeek > viewsLastWeek) {
+      profileViewsHint = `↑ ${viewsThisWeek} views this week`;
+    } else {
+      profileViewsHint = `${viewsThisWeek} views this week`;
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -113,7 +129,7 @@ function SeekerDashboardContent() {
         <p className="text-subtle mt-1">Track applications and discover recommended jobs</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SeekerStatCard
           label="Applications sent"
           value={stats.applications_sent}
@@ -131,6 +147,13 @@ function SeekerDashboardContent() {
           value={stats.communities_joined}
           icon={Users}
           href="/my-communities"
+        />
+        <SeekerStatCard
+          label="Profile views"
+          value={totalProfileViews}
+          icon={Eye}
+          href="/profile"
+          hint={profileViewsHint}
         />
       </div>
 
