@@ -44,20 +44,24 @@ function FeaturedPlacementCard({
   onUpdated: (company: Company) => void;
 }) {
   const [pitch, setPitch] = useState(company.featured_pitch ?? "");
+  const [pitchSource, setPitchSource] = useState(company.featured_pitch);
   const [featuring, setFeaturing] = useState(false);
+  const [nowMs] = useState(() => Date.now());
   const active = Boolean(company.is_featured);
   const until = company.featured_until
     ? formatDate(company.featured_until)
     : null;
+
+  if (company.featured_pitch !== pitchSource) {
+    setPitchSource(company.featured_pitch);
+    setPitch(company.featured_pitch ?? "");
+  }
+
   const daysLeft = (() => {
     const end = parseApiDate(company.featured_until);
     if (!end) return null;
-    return Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86_400_000));
+    return Math.max(0, Math.ceil((end.getTime() - nowMs) / 86_400_000));
   })();
-
-  useEffect(() => {
-    setPitch(company.featured_pitch ?? "");
-  }, [company.featured_pitch]);
 
   const activate = async () => {
     setFeaturing(true);

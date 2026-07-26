@@ -228,20 +228,33 @@ function JobsPage() {
   const [nlQuery, setNlQuery] = useState("");
   const [nlSearching, setNlSearching] = useState(false);
 
+  const q = searchParams.get("q") || undefined;
+  const location = searchParams.get("location") || undefined;
+  const category = searchParams.get("category") || undefined;
+  const jobType =
+    (searchParams.get("job_type") as JobsQueryParams["job_type"]) || undefined;
+  const experienceLevel =
+    (searchParams.get("experience_level") as JobsQueryParams["experience_level"]) ||
+    undefined;
+
   const filters: JobsQueryParams = {
-    q: searchParams.get("q") || undefined,
-    location: searchParams.get("location") || undefined,
-    category: searchParams.get("category") || undefined,
-    job_type: (searchParams.get("job_type") as JobsQueryParams["job_type"]) || undefined,
-    experience_level:
-      (searchParams.get("experience_level") as JobsQueryParams["experience_level"]) ||
-      undefined,
+    q,
+    location,
+    category,
+    job_type: jobType,
+    experience_level: experienceLevel,
   };
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await jobsService.list(filters);
+      const data = await jobsService.list({
+        q,
+        location,
+        category,
+        job_type: jobType,
+        experience_level: experienceLevel,
+      });
       setJobs(data);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
@@ -249,11 +262,20 @@ function JobsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters.q, filters.location, filters.category, filters.job_type, filters.experience_level]);
+  }, [q, location, category, jobType, experienceLevel]);
 
   useEffect(() => {
     if (plainEnglish) return;
-    fetchJobs();
+    let cancelled = false;
+    void (async () => {
+      // Defer so the first setState is not synchronous inside the effect body.
+      await Promise.resolve();
+      if (cancelled) return;
+      await fetchJobs();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [fetchJobs, plainEnglish]);
 
   const runPlainEnglishSearch = async () => {
