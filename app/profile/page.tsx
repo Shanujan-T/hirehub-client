@@ -19,6 +19,8 @@ import { PortalLayout } from "@/components/layout/main-layout";
 import { ResumeUpload } from "@/components/resume-upload";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { SkillTagInput } from "@/components/skill-tag-input";
+import { ExperienceEducationSections } from "@/components/profile/experience-education-sections";
+import { RecommendationsSection } from "@/components/profile/recommendations-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
@@ -74,6 +76,8 @@ function ProfileContent() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [resumePublic, setResumePublic] = useState(false);
   const [savingResumePublic, setSavingResumePublic] = useState(false);
+  const [openToWork, setOpenToWork] = useState(false);
+  const [savingOpenToWork, setSavingOpenToWork] = useState(false);
   const [aiResumeDraft, setAiResumeDraft] = useState("");
   const [generatingResume, setGeneratingResume] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -119,6 +123,7 @@ function ProfileContent() {
       setNotifyVia((user.notify_via as NotifyVia) || "email");
       setWhatsappNumber(user.whatsapp_number ?? "");
       setResumePublic(Boolean(user.resume_public));
+      setOpenToWork(Boolean(user.open_to_work));
       setUsernameDraft(user.username ?? "");
       setTwoFactorEnabled(Boolean(user.two_factor_enabled));
 
@@ -161,6 +166,25 @@ function ProfileContent() {
       toast.error(getApiErrorMessage(err));
     } finally {
       setSavingResumePublic(false);
+    }
+  };
+
+  const saveOpenToWork = async (next: boolean) => {
+    setSavingOpenToWork(true);
+    setOpenToWork(next);
+    try {
+      await authService.toggleOpenToWork(next);
+      await refreshProfile();
+      toast.success(
+        next
+          ? "Open to work is visible to employers"
+          : "Open to work badge hidden from employers",
+      );
+    } catch (err) {
+      setOpenToWork(!next);
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSavingOpenToWork(false);
     }
   };
 
@@ -553,9 +577,31 @@ function ProfileContent() {
                 </span>
               </span>
             </label>
+            <label className="flex items-start gap-3 text-sm text-heading">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-emerald-600"
+                checked={openToWork}
+                disabled={savingOpenToWork}
+                onChange={(e) => void saveOpenToWork(e.target.checked)}
+              />
+              <span>
+                Open to work — show employers you&apos;re actively looking
+                <span className="text-subtle mt-0.5 block text-xs">
+                  Adds a green badge employers see on candidate search, applications, and your public profile.
+                </span>
+              </span>
+            </label>
           </CardContent>
         </Card>
       )}
+
+      {user.role === "seeker" ? (
+        <>
+          <ExperienceEducationSections />
+          <RecommendationsSection />
+        </>
+      ) : null}
 
       <Card className="border-default bg-surface-card">
 
