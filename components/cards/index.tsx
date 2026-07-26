@@ -7,7 +7,7 @@ import { DeadlineCountdown } from "@/components/deadline-countdown";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn, formatLabel, formatSalary, resolveMediaUrl } from "@/lib/utils";
+import { cn, formatLabel, formatSalary, resolveMediaUrl, truncateText } from "@/lib/utils";
 import type { Community, Company, Job } from "@/types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -279,6 +279,7 @@ function StatusPill({
 
 export function CompanyCard({ company, jobCount, className }: CompanyCardProps) {
   const openJobs = jobCount ?? company.open_jobs_count ?? 0;
+  const descriptionPreview = truncateText(company.description, 70);
 
   return (
     <Link
@@ -312,12 +313,18 @@ export function CompanyCard({ company, jobCount, className }: CompanyCardProps) 
       </div>
 
       <div className="mt-4 flex-1 space-y-2">
-        {company.description ? (
-          <p className="line-clamp-1 text-sm text-subtle">{company.description}</p>
+        {descriptionPreview ? (
+          <p className="text-sm text-subtle">{descriptionPreview}</p>
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            No description available.
+          </p>
+        )}
+        {openJobs > 0 ? (
+          <p className="text-sm font-medium text-heading">
+            {openJobs} open {openJobs === 1 ? "position" : "positions"}
+          </p>
         ) : null}
-        <p className="text-sm font-medium text-heading">
-          {openJobs} open {openJobs === 1 ? "position" : "positions"}
-        </p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-default pt-4 text-sm text-subtle">

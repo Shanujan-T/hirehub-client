@@ -92,3 +92,15 @@ export function resolveMediaUrl(url?: string | null): string | null {
   }
   return url;
 }
+
+/** Truncate text to a max character length with an ellipsis when exceeded. */
+export function truncateText(
+  value: string | null | undefined,
+  maxLength = 70,
+): string {
+  const text = (value ?? "").trim();
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`;
+}
+

@@ -32,7 +32,7 @@ import jobsService from "@/services/jobs";
 import applicationsService from "@/services/applications";
 import aiService from "@/services/ai";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { cn, formatDate, formatLabel, formatSalary, resolveMediaUrl } from "@/lib/utils";
+import { cn, formatDate, formatLabel, formatSalary, resolveMediaUrl, truncateText } from "@/lib/utils";
 import type { Job } from "@/types";
 
 const applySchema = z.object({
@@ -441,8 +441,14 @@ export default function JobDetailPage() {
                         <MapPin className="h-3.5 w-3.5" /> {job.company.location}
                       </p>
                     )}
-                    {job.company.description && (
-                      <p className="text-subtle line-clamp-4 text-sm">{job.company.description}</p>
+                    {job.company.description ? (
+                      <p className="text-subtle text-sm">
+                        {truncateText(job.company.description, 120)}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 dark:text-gray-500">
+                        No description available.
+                      </p>
                     )}
                     {job.company.website && (
                       <a
