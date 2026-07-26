@@ -20,7 +20,7 @@ export function ConversationInbox({
       <EmptyState
         icon={MessageSquare}
         title="No messages yet"
-        description="Start a conversation from an application to message the other party."
+        description="Message applicants from a job, or open a chat from My Network connections."
       />
     );
   }
@@ -50,9 +50,13 @@ export function ConversationInbox({
                         {conversation.other_party?.full_name ?? "Conversation"}
                       </p>
                       <p className="text-subtle truncate text-xs">
-                        {conversation.job_title ??
-                          conversation.application?.job?.title ??
-                          "Application"}
+                        {conversation.context === "connection"
+                          ? "Connection"
+                          : conversation.job_title
+                            ? `Re: ${conversation.job_title}`
+                            : conversation.application?.job?.title
+                              ? `Re: ${conversation.application.job.title}`
+                              : "Application"}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
