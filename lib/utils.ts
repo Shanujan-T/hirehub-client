@@ -98,7 +98,7 @@ export function formatClockTime(value: string | null | undefined): string {
 export function formatSalary(
   min: number | null | undefined,
   max: number | null | undefined,
-  currency = "USD",
+  currency = "LKR",
 ): string {
   const formatter = new Intl.NumberFormat(undefined, {
     style: "currency",
