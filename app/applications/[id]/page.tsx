@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Download, ArrowLeft, Mail } from "lucide-react";
+import { Download, ArrowLeft, Mail, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { ApplicationPipeline } from "@/components/application-pipeline";
@@ -13,7 +13,7 @@ import { StatusHistoryTimeline } from "@/components/status-history-timeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/shared";
-import { LoadingState } from "@/app/_components/page-states";
+import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import applicationsService from "@/services/applications";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
@@ -71,7 +71,22 @@ function ApplicationDetailContent() {
   };
 
   if (loading) return <LoadingState />;
-  if (!app) return null;
+  if (!app) {
+    return (
+      <EmptyState
+        icon={FileText}
+        title="Application not found"
+        description="This application may have been removed or you don’t have access."
+        action={
+          <Link href="/applications">
+            <Button type="button" variant="outline">
+              Back to applications
+            </Button>
+          </Link>
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
