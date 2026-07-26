@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { AuthenticatedRoute } from "@/components/auth-guard";
 import { ConversationThread } from "@/components/conversation-thread";
 import { PortalLayout } from "@/components/layout/main-layout";
-import { LoadingState } from "@/app/_components/page-states";
+import { Button } from "@/components/ui/button";
+import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import conversationsService from "@/services/conversations";
 import { getApiErrorMessage } from "@/lib/api-client";
 
@@ -29,7 +30,22 @@ function ApplicationMessagesContent() {
   }, [applicationId]);
 
   if (loading) return <LoadingState message="Opening conversation..." />;
-  if (!conversationId) return null;
+  if (!conversationId) {
+    return (
+      <EmptyState
+        icon={MessageSquare}
+        title="Couldn’t open conversation"
+        description="Try again from the application page, or check that you still have access."
+        action={
+          <Link href={`/applications/${applicationId}`}>
+            <Button type="button" variant="outline">
+              Back to application
+            </Button>
+          </Link>
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
