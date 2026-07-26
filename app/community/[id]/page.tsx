@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { Avatar } from "@/components/ui/shared";
 import { ContentCoverImage } from "@/components/content-cover-image";
+import { PostEngagement } from "@/components/post-engagement";
 import { useAuth } from "@/providers/auth-provider";
 import postsService from "@/services/posts";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -192,7 +193,7 @@ export default function PostDetailPage() {
             {imageSrc ? (
               <button
                 type="button"
-                className="mt-4 block w-full cursor-zoom-in"
+                className="mt-4 block w-full cursor-zoom-in empty:hidden"
                 onClick={() => setLightboxOpen(true)}
                 aria-label="Expand post image"
               >
@@ -217,6 +218,19 @@ export default function PostDetailPage() {
                 {post.link_url}
               </a>
             )}
+
+            <div className="mt-4 border-t border-default pt-2">
+              <PostEngagement
+                post={post}
+                onUpdated={setPost}
+                onCommentClick={() => {
+                  document.getElementById("post-comments")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -231,7 +245,7 @@ export default function PostDetailPage() {
           </Modal>
         )}
 
-        <Card>
+        <Card id="post-comments">
           <CardHeader>
             <CardTitle>Comments ({comments.length})</CardTitle>
           </CardHeader>
