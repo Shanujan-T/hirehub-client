@@ -155,6 +155,7 @@ export interface Job {
   skills?: JobSkill[];
   skill_ids?: number[];
   match_score?: number;
+  match_percent?: number;
   matched_skills?: string[];
   skill_gap?: { id: number; name: string | null }[];
   required_skills_count?: number;
