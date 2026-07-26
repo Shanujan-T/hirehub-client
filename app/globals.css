@@ -343,22 +343,32 @@
 }
 
 @utility animate-fade-up {
-  animation: fade-up 0.65s ease forwards;
+  animation: fade-up 0.45s ease forwards;
   opacity: 0;
 }
 
 @utility animate-fade-up-delay-1 {
-  animation: fade-up 0.65s ease 0.1s forwards;
+  animation: fade-up 0.45s ease 0.1s forwards;
   opacity: 0;
 }
 
 @utility animate-fade-up-delay-2 {
-  animation: fade-up 0.65s ease 0.2s forwards;
+  animation: fade-up 0.45s ease 0.22s forwards;
   opacity: 0;
 }
 
 @utility animate-fade-up-delay-3 {
-  animation: fade-up 0.65s ease 0.35s forwards;
+  animation: fade-up 0.45s ease 0.34s forwards;
+  opacity: 0;
+}
+
+@utility animate-fade-up-delay-4 {
+  animation: fade-up 0.45s ease 0.46s forwards;
+  opacity: 0;
+}
+
+@utility animate-fade-up-delay-5 {
+  animation: fade-up 0.5s ease 0.2s forwards;
   opacity: 0;
 }
 
@@ -366,12 +376,29 @@
   animation: mesh-drift 18s ease-in-out infinite;
 }
 
+@utility animate-hero-float {
+  animation: hero-float 6s ease-in-out infinite;
+}
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-fade-up-delay-1,
   .animate-fade-up-delay-2,
   .animate-fade-up-delay-3,
-  .animate-mesh-drift {
+  .animate-fade-up-delay-4,
+  .animate-fade-up-delay-5,
+  .animate-mesh-drift,
+  .animate-hero-float {
     animation: none;
     opacity: 1;
     transform: none;
@@ -420,4 +447,38 @@
       0 8px 32px rgba(249, 77, 50, 0.25),
       0 0 0 1px rgba(255, 255, 255, 0.15) inset;
   }
+}
+
+/* Slim scrollbars (chat lists, dropdowns, panels) */
+.slim-scrollbar,
+.message-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.slim-scrollbar::-webkit-scrollbar,
+.message-list::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.slim-scrollbar::-webkit-scrollbar-thumb,
+.message-list::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+}
+
+.slim-scrollbar::-webkit-scrollbar-track,
+.message-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark .slim-scrollbar,
+.dark .message-list {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.dark .slim-scrollbar::-webkit-scrollbar-thumb,
+.dark .message-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 }
