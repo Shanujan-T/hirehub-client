@@ -4,10 +4,12 @@ import type {
   Comment,
   CreateCommentPayload,
   CreatePostPayload,
+  FeedItem,
   MessageResponse,
   Post,
   PostBookmark,
   PostsQueryParams,
+  Repost,
 } from "@/types";
 
 export const postsService = {
@@ -16,6 +18,19 @@ export const postsService = {
       params,
     });
     return data.posts;
+  },
+
+  async listFeed(params?: PostsQueryParams): Promise<FeedItem[]> {
+    const { data } = await apiClient.get<{ feed?: FeedItem[]; posts: Post[] }>(
+      "/api/posts",
+      { params },
+    );
+    if (data.feed?.length) return data.feed;
+    return data.posts.map((post) => ({
+      kind: "post" as const,
+      created_at: post.created_at,
+      post,
+    }));
   },
 
   async getById(id: number): Promise<Post> {
@@ -33,6 +48,9 @@ export const postsService = {
       formData.append("type", fields.type ?? "discussion");
       if (fields.community_id != null) {
         formData.append("community_id", String(fields.community_id));
+      }
+      if (fields.company_id != null) {
+        formData.append("company_id", String(fields.company_id));
       }
       if (fields.job_id != null) {
         formData.append("job_id", String(fields.job_id));
@@ -111,22 +129,77 @@ export const postsService = {
     return data;
   },
 
-  async addReaction(
-    postId: number,
-    payload: AddReactionPayload,
-  ): Promise<MessageResponse> {
-    const { data } = await apiClient.post<MessageResponse>(
-      `/api/posts/${postId}/reactions`,
-      payload,
-    );
+  async like(postId: number): Promise<{
+    like_count: number;
+    liked_by_me: boolean;
+    message: string;
+  }> {
+    const { data } = await apiClient.post<{
+      like_count: number;
+      liked_by_me: boolean;
+      message: string;
+    }>(`/api/posts/${postId}/like`);
     return data;
   },
 
-  async removeReaction(postId: number): Promise<MessageResponse> {
-    const { data } = await apiClient.delete<MessageResponse>(
-      `/api/posts/${postId}/reactions`,
-    );
+  async unlike(postId: number): Promise<{
+    like_count: number;
+    liked_by_me: boolean;
+    message: string;
+  }> {
+    const { data } = await apiClient.delete<{
+      like_count: number;
+      liked_by_me: boolean;
+      message: string;
+    }>(`/api/posts/${postId}/like`);
     return data;
+  },
+
+  async addReaction(
+    postId: number,
+    _payload?: AddReactionPayload,
+  ): Promise<MessageResponse> {
+    const data = await this.like(postId);
+    return { message: data.message };
+  },
+
+  async removeReaction(postId: number): Promise<MessageResponse> {
+    const data = await this.unlike(postId);
+    return { message: data.message };
+  },
+
+  async getLikes(postId: number): Promise<{
+    like_count: number;
+    liked_by_me: boolean;
+  }> {
+    const { data } = await apiClient.get<{
+      like_count: number;
+      liked_by_me: boolean;
+    }>(`/api/posts/${postId}/like`);
+    return data;
+  },
+
+  async getReactions(postId: number): Promise<{
+    like_count: number;
+    liked_by_me: boolean;
+    reaction_count: number;
+    my_reaction: string | null;
+  }> {
+    const { data } = await apiClient.get<{
+      like_count: number;
+      liked_by_me: boolean;
+      reaction_count: number;
+      my_reaction: string | null;
+    }>(`/api/posts/${postId}/reactions`);
+    return data;
+  },
+
+  async repost(postId: number, comment?: string): Promise<Repost> {
+    const { data } = await apiClient.post<{ repost: Repost }>(
+      `/api/posts/${postId}/repost`,
+      { comment: comment || undefined },
+    );
+    return data.repost;
   },
 
   async bookmark(postId: number): Promise<MessageResponse> {
