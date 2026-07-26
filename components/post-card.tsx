@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/shared";
 import { ContentCoverImage } from "@/components/content-cover-image";
+import { PostEngagement } from "@/components/post-engagement";
 import { cn, formatDate, formatLabel, resolveMediaUrl } from "@/lib/utils";
 import { getPostTypeBadgeClass, getRoleBadgeClass } from "@/lib/post-utils";
 import type { Post } from "@/types";
@@ -15,7 +15,6 @@ interface PostCardProps {
 
 export function PostCard({ post, className }: PostCardProps) {
   const imageSrc = resolveMediaUrl(post.image_url);
-  const commentCount = post.comment_count ?? post.comments?.length ?? 0;
 
   return (
     <Link href={`/community/${post.id}`} className={cn("group block", className)}>
@@ -66,30 +65,28 @@ export function PostCard({ post, className }: PostCardProps) {
           {post.title}
         </h2>
 
-        {/* 3. Cover image (flexible aspect; omitted when absent) */}
+        {/* 3. Cover image (flexible aspect; omitted when absent or broken) */}
         {imageSrc ? (
-          <div className="mt-3">
-            <ContentCoverImage
-              src={imageSrc}
-              imgClassName="transition-transform duration-300 group-hover:scale-[1.01]"
-            />
-          </div>
+          <ContentCoverImage
+            src={imageSrc}
+            className="mt-3"
+            imgClassName="transition-transform duration-300 group-hover:scale-[1.01]"
+          />
         ) : null}
 
         {/* 4. Body text */}
         <p className="text-subtle mt-3 line-clamp-3 text-sm leading-relaxed">{post.body}</p>
 
-        {/* 5. Footer */}
-        <div className="mt-4 flex items-center justify-between border-t border-default pt-3">
-          <div className="text-subtle flex items-center gap-1.5 text-sm">
-            <MessageSquare className="size-4" aria-hidden />
-            <span>
-              {commentCount} {commentCount === 1 ? "comment" : "comments"}
-            </span>
-          </div>
-          <span className="text-sm font-medium text-[#0C44B7] transition-colors group-hover:text-[#AB2F74] dark:text-[#22d3ee]">
-            View discussion →
-          </span>
+        {/* 5. Engagement: Like · Comment · Repost */}
+        <div
+          className="mt-4 border-t border-default pt-2"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <PostEngagement post={post} commentHref={`/community/${post.id}`} />
         </div>
       </article>
     </Link>
