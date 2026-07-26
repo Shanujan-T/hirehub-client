@@ -173,7 +173,7 @@ export function RecommendationsSection() {
             <Label htmlFor="ref_title">Their title (optional)</Label>
             <Input
               id="ref_title"
-              placeholder="Former Manager at Acme"
+              placeholder="Former Manager at Lanka Digital Labs"
               value={form.author_title}
               onChange={(e) => setForm((f) => ({ ...f, author_title: e.target.value }))}
             />

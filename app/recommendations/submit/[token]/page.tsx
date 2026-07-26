@@ -98,7 +98,7 @@ export default function RecommendationSubmitPage() {
               <Label htmlFor="title">Your title</Label>
               <Input
                 id="title"
-                placeholder="Former Manager at Acme"
+                placeholder="Former Manager at Lanka Digital Labs"
                 value={authorTitle}
                 onChange={(e) => setAuthorTitle(e.target.value)}
               />
