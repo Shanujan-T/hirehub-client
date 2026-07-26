@@ -12,6 +12,8 @@ interface EntityAvatarProps extends AvatarColorOptions {
   imageUrl?: string | null;
   size?: "sm" | "md";
   className?: string;
+  /** Employer-facing open-to-work ring (LI1). */
+  openToWork?: boolean;
 }
 
 const sizeClasses = {
@@ -28,14 +30,19 @@ export function EntityAvatar({
   variant = "default",
   size = "md",
   className,
+  openToWork = false,
 }: EntityAvatarProps) {
   const src = resolveMediaUrl(imageUrl);
+  const ringClass = openToWork
+    ? "ring-2 ring-green-500 ring-offset-2 ring-offset-surface"
+    : "";
 
   if (src) {
     return (
       <div
         className={cn(
           "relative shrink-0 overflow-hidden rounded-xl border border-default",
+          ringClass,
           sizeClasses[size],
           className,
         )}
@@ -51,6 +58,7 @@ export function EntityAvatar({
     <div
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-xl font-semibold",
+        ringClass,
         sizeClasses[size],
         getInitialAvatarClass({ entityId, communityType, industry, variant }),
         className,
