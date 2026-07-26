@@ -69,7 +69,7 @@ export function AuthLayout({
             </ul>
           </div>
           <p className="text-sm text-white/50">
-            Trusted by seekers and employers worldwide
+            Built for seekers and employers across Sri Lanka
           </p>
         </div>
       </div>
