@@ -7,11 +7,13 @@ export function SeekerStatCard({
   value,
   icon: Icon,
   href,
+  hint,
 }: {
   label: string;
   value: number;
   icon: typeof Briefcase;
   href?: string;
+  hint?: string | null;
 }) {
   const content = (
     <Card className="border-default bg-surface-card card-hover h-full">
@@ -22,6 +24,7 @@ export function SeekerStatCard({
         <div>
           <p className="text-subtle text-sm">{label}</p>
           <p className="font-display text-2xl font-bold text-heading">{value}</p>
+          {hint ? <p className="text-subtle mt-0.5 text-xs">{hint}</p> : null}
         </div>
       </CardContent>
     </Card>
