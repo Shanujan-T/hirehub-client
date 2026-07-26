@@ -80,6 +80,10 @@ export interface Company {
   founded_year: number | null;
   company_size: string | null;
   is_verified: boolean;
+  featured_until?: string | null;
+  featured_pitch?: string | null;
+  featured_pitch_display?: string | null;
+  is_featured?: boolean;
   created_at: string | null;
   open_jobs_count?: number;
   avg_response_time_days?: number | null;
