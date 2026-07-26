@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import socialService from "@/services/social";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { PortaledPopover } from "@/components/ui/portaled-popover";
 import type { Notification } from "@/types";
 
 const POLL_MS = 20_000;
@@ -15,12 +16,14 @@ const PANEL_LIMIT = 12;
 
 export function NotificationBell() {
   const router = useRouter();
-  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+
+  const closePanel = useCallback(() => setOpen(false), []);
 
   const load = useCallback(async (silent = true) => {
     if (!silent) setLoading(true);
@@ -45,24 +48,6 @@ export function NotificationBell() {
       window.removeEventListener("focus", onFocus);
     };
   }, [load]);
-
-  useEffect(() => {
-    if (!open) return;
-    function onClickOutside(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   const openPanel = () => {
     setOpen((prev) => !prev);
@@ -102,8 +87,9 @@ export function NotificationBell() {
   };
 
   return (
-    <div ref={rootRef} className="relative">
+    <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={openPanel}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-default bg-surface-card text-subtle transition-colors hover:text-heading"
@@ -126,79 +112,84 @@ export function NotificationBell() {
         ) : null}
       </button>
 
-      {open ? (
-        <div
-          className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-default bg-surface-card shadow-xl"
-          role="dialog"
-          aria-label="Notifications panel"
-        >
-          <div className="flex items-center justify-between border-b border-default px-3 py-2">
-            <p className="text-sm font-semibold text-heading">Notifications</p>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 ? (
-                <button
-                  type="button"
-                  disabled={markingAll}
-                  onClick={() => void markAll()}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-blue)] hover:underline disabled:opacity-60"
-                >
-                  <CheckCheck className="h-3.5 w-3.5" />
-                  Mark all read
-                </button>
-              ) : null}
-              <Link
-                href="/notifications"
-                onClick={() => setOpen(false)}
-                className="text-xs text-subtle hover:text-heading"
+      <PortaledPopover
+        open={open}
+        onClose={closePanel}
+        anchorRef={buttonRef}
+        align="end"
+        role="dialog"
+        aria-label="Notifications panel"
+        className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-default bg-surface-card shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-default px-3 py-2">
+          <p className="text-sm font-semibold text-heading">Notifications</p>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 ? (
+              <button
+                type="button"
+                disabled={markingAll}
+                onClick={() => void markAll()}
+                className="inline-flex items-center gap-1 text-xs font-medium text-[var(--brand-blue)] hover:underline disabled:opacity-60"
               >
-                View all
-              </Link>
-            </div>
-          </div>
-
-          <div className="max-h-80 overflow-y-auto">
-            {loading && items.length === 0 ? (
-              <p className="text-subtle px-3 py-6 text-center text-sm">Loading…</p>
-            ) : items.length === 0 ? (
-              <p className="text-subtle px-3 py-6 text-center text-sm">
-                You&apos;re all caught up.
-              </p>
-            ) : (
-              <ul>
-                {items.map((item) => {
-                  const title = item.title || item.message;
-                  const body =
-                    item.body && item.body !== title
-                      ? item.body
-                      : item.message !== title
-                        ? item.message
-                        : null;
-                  return (
-                    <li key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => void openItem(item)}
-                        className={cn(
-                          "w-full border-b border-default px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-surface-muted",
-                          !item.is_read && "bg-[color-mix(in_srgb,var(--brand-blue)_6%,transparent)]",
-                        )}
-                      >
-                        <p className="text-sm font-medium text-heading">{title}</p>
-                        {body ? (
-                          <p className="text-subtle mt-0.5 line-clamp-2 text-xs">{body}</p>
-                        ) : null}
-                        <p className="text-subtle mt-1 text-[11px]">
-                          {formatRelativeTime(item.created_at)}
-                        </p>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                <CheckCheck className="h-3.5 w-3.5" />
+                Mark all read
+              </button>
+            ) : null}
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="text-xs text-subtle hover:text-heading"
+            >
+              View all
+            </Link>
           </div>
         </div>
-      ) : null}
+
+        <div className="slim-scrollbar max-h-80 overflow-y-auto">
+          {loading && items.length === 0 ? (
+            <p className="text-subtle px-3 py-6 text-center text-sm">Loading…</p>
+          ) : items.length === 0 ? (
+            <p className="text-subtle px-3 py-6 text-center text-sm">
+              You&apos;re all caught up.
+            </p>
+          ) : (
+            <ul>
+              {items.map((item) => {
+                const title = item.title || item.message;
+                const body =
+                  item.body && item.body !== title
+                    ? item.body
+                    : item.message !== title
+                      ? item.message
+                      : null;
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => void openItem(item)}
+                      className={cn(
+                        "w-full border-b border-default px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-surface-muted",
+                        !item.is_read &&
+                          "bg-[color-mix(in_srgb,var(--brand-blue)_6%,transparent)]",
+                      )}
+                    >
+                      <p className="text-sm font-medium text-heading">{title}</p>
+                      {body ? (
+                        <p className="text-subtle mt-0.5 line-clamp-2 text-xs">
+                          {body}
+                        </p>
+                      ) : null}
+                      <p className="text-subtle mt-1 text-[11px]">
+                        {formatRelativeTime(item.created_at)}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </PortaledPopover>
     </div>
   );
 }
