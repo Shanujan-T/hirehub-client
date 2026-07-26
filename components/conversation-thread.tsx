@@ -67,6 +67,7 @@ export function ConversationThread({
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [sending, setSending] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
@@ -105,10 +106,12 @@ export function ConversationThread({
         : await conversationsService.getMessages(conversationId);
       setConversation(data.conversation);
       setMessages(data.messages);
+      setLoadFailed(false);
       if (!readOnly && !adminReadOnly) {
         await conversationsService.markRead(conversationId);
       }
     } catch (err) {
+      setLoadFailed(true);
       toast.error(getApiErrorMessage(err));
     } finally {
       setLoading(false);
@@ -275,6 +278,22 @@ export function ConversationThread({
             <div className="flex min-h-full w-full max-w-full flex-col justify-end">
               {loading && messages.length === 0 ? (
                 <p className="text-subtle py-6 text-center text-sm">Loading messages...</p>
+              ) : null}
+              {!loading && loadFailed && messages.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                  <p className="text-heading text-sm font-medium">Couldn’t load messages</p>
+                  <p className="text-subtle max-w-xs text-sm">
+                    Check your connection and try again.
+                  </p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void load()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
+              {!loading && !loadFailed && messages.length === 0 ? (
+                <p className="text-subtle py-6 text-center text-sm">
+                  No messages yet. Say hello to start the conversation.
+                </p>
               ) : null}
               {messages.map((m, index) => {
                 const mine = m.sender_id === user?.id;
