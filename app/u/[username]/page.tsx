@@ -6,11 +6,13 @@ import { useParams } from "next/navigation";
 import { BadgeCheck, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { EntityAvatar } from "@/components/entity-avatar";
+import { OpenToWorkBadge } from "@/components/open-to-work-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/app/_components/page-states";
 import { useAuth } from "@/providers/auth-provider";
 import socialService from "@/services/social";
+import connectionsService from "@/services/connections";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatLabel, resolveMediaUrl } from "@/lib/utils";
 import type { PublicSeekerProfile } from "@/types";
@@ -23,6 +25,7 @@ export default function PublicSeekerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [endorsingId, setEndorsingId] = useState<number | null>(null);
+  const [connectBusy, setConnectBusy] = useState(false);
 
   useEffect(() => {
     if (!username) {
@@ -112,12 +115,17 @@ export default function PublicSeekerProfilePage() {
               <EntityAvatar
                 name={profile.full_name}
                 imageUrl={profile.avatar_url}
+                entityId={profile.user_id}
+                openToWork={Boolean(profile.open_to_work)}
                 className="size-20 rounded-2xl text-2xl"
               />
               <div className="min-w-0 flex-1">
-                <h1 className="font-display text-3xl font-extrabold text-heading">
-                  {profile.full_name}
-                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="font-display text-3xl font-extrabold text-heading">
+                    {profile.full_name}
+                  </h1>
+                  {profile.open_to_work ? <OpenToWorkBadge /> : null}
+                </div>
                 <p className="text-subtle mt-1 text-sm">@{profile.username}</p>
                 {profile.location ? (
                   <p className="text-subtle mt-2 inline-flex items-center gap-1 text-sm">
@@ -129,6 +137,51 @@ export default function PublicSeekerProfilePage() {
                   <p className="text-subtle mt-1 text-sm">
                     {formatLabel(profile.education_level)}
                   </p>
+                ) : null}
+                {isAuthenticated && profile.connection?.status !== "self" ? (
+                  <div className="mt-3">
+                    {profile.connection?.status === "accepted" ? (
+                      <Button type="button" size="sm" variant="outline" disabled>
+                        Connected
+                      </Button>
+                    ) : profile.connection?.status === "pending" ? (
+                      <Button type="button" size="sm" variant="outline" disabled>
+                        {profile.connection.is_requester ? "Request sent" : "Respond in Network"}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={connectBusy || !profile.user_id}
+                        onClick={async () => {
+                          if (!profile.user_id) return;
+                          setConnectBusy(true);
+                          try {
+                            await connectionsService.request(profile.user_id);
+                            setProfile((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    connection: {
+                                      status: "pending",
+                                      connection_id: null,
+                                      is_requester: true,
+                                    },
+                                  }
+                                : prev,
+                            );
+                            toast.success("Connection request sent");
+                          } catch (err) {
+                            toast.error(getApiErrorMessage(err));
+                          } finally {
+                            setConnectBusy(false);
+                          }
+                        }}
+                      >
+                        Connect
+                      </Button>
+                    )}
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -173,6 +226,60 @@ export default function PublicSeekerProfilePage() {
                           {endorsingId === skill.id ? "…" : "Endorse"}
                         </Button>
                       ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {(profile.experiences?.length ?? 0) > 0 ? (
+              <div>
+                <h2 className="text-heading mb-2 text-sm font-semibold">Experience</h2>
+                <ul className="space-y-3">
+                  {profile.experiences!.map((row) => (
+                    <li key={row.id} className="rounded-lg border border-default px-3 py-2">
+                      <p className="text-sm font-semibold text-heading">{row.job_title}</p>
+                      <p className="text-subtle text-xs">{row.company_name}</p>
+                      <p className="text-subtle text-xs mt-0.5">
+                        {row.start_date?.slice(0, 7)} → {row.end_date?.slice(0, 7) || "Present"}
+                      </p>
+                      {row.description ? (
+                        <p className="text-subtle mt-1 whitespace-pre-wrap text-sm">{row.description}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {(profile.educations?.length ?? 0) > 0 ? (
+              <div>
+                <h2 className="text-heading mb-2 text-sm font-semibold">Education</h2>
+                <ul className="space-y-3">
+                  {profile.educations!.map((row) => (
+                    <li key={row.id} className="rounded-lg border border-default px-3 py-2">
+                      <p className="text-sm font-semibold text-heading">{row.degree}</p>
+                      <p className="text-subtle text-xs">{row.institution}</p>
+                      {row.field_of_study ? (
+                        <p className="text-subtle text-xs">{row.field_of_study}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {(profile.recommendations?.length ?? 0) > 0 ? (
+              <div>
+                <h2 className="text-heading mb-2 text-sm font-semibold">Recommendations</h2>
+                <ul className="space-y-3">
+                  {profile.recommendations!.map((row) => (
+                    <li key={row.id} className="rounded-lg border border-default bg-surface-muted/40 px-3 py-3">
+                      <p className="text-sm font-semibold text-heading">{row.author_name}</p>
+                      {row.author_title ? (
+                        <p className="text-subtle text-xs">{row.author_title}</p>
+                      ) : null}
+                      <p className="text-subtle mt-2 whitespace-pre-wrap text-sm">{row.content}</p>
                     </li>
                   ))}
                 </ul>
