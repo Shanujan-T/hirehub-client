@@ -1,5 +1,6 @@
 import { cn, formatLabel, resolveMediaUrl } from "@/lib/utils";
 import { getEntityInitials, getInitialAvatarClass } from "@/lib/avatar-utils";
+import { OPEN_TO_WORK_RING } from "@/components/open-to-work-badge";
 import { STATUS_COLORS } from "@/lib/constants";
 import type { ApplicationStatus } from "@/types";
 
@@ -9,6 +10,8 @@ interface AvatarProps {
   size?: "sm" | "md" | "lg";
   entityId?: number;
   className?: string;
+  /** Employer-facing open-to-work ring (LI1). */
+  openToWork?: boolean;
 }
 
 const avatarSizes = {
@@ -17,10 +20,20 @@ const avatarSizes = {
   lg: "size-14 text-base",
 };
 
-export function Avatar({ src, name, size = "md", entityId, className }: AvatarProps) {
+export function Avatar({
+  src,
+  name,
+  size = "md",
+  entityId,
+  className,
+  openToWork = false,
+}: AvatarProps) {
   const initials = getEntityInitials(name);
   const resolvedSrc = resolveMediaUrl(src);
   const dimension = size === "sm" ? 32 : size === "md" ? 40 : 56;
+  const ringClass = openToWork
+    ? OPEN_TO_WORK_RING
+    : "ring-2 ring-[#0C44B7]/20";
 
   if (resolvedSrc) {
     return (
@@ -31,7 +44,8 @@ export function Avatar({ src, name, size = "md", entityId, className }: AvatarPr
         width={dimension}
         height={dimension}
         className={cn(
-          "rounded-full object-cover ring-2 ring-[#0C44B7]/20",
+          "rounded-full object-cover",
+          ringClass,
           avatarSizes[size],
           className,
         )}
@@ -43,6 +57,7 @@ export function Avatar({ src, name, size = "md", entityId, className }: AvatarPr
     <div
       className={cn(
         "inline-flex items-center justify-center rounded-full font-semibold",
+        ringClass,
         avatarSizes[size],
         getInitialAvatarClass({ entityId }),
         className,
