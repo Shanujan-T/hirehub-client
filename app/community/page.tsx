@@ -15,7 +15,7 @@ import { getApiErrorMessage } from "@/lib/api-client";
 import { FEED_POST_TYPES, PAGE_HEADER_BAND } from "@/lib/constants";
 import { POST_TYPE_FILTER_ACTIVE, POST_TYPE_FILTER_IDLE } from "@/lib/post-utils";
 import { cn, formatLabel } from "@/lib/utils";
-import type { Post, PostType, PostsQueryParams } from "@/types";
+import type { FeedItem, Post, PostType, PostsQueryParams } from "@/types";
 
 function TypeFilterPills({
   activeType,
@@ -61,7 +61,7 @@ function CommunityFeedPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const typeFilter = searchParams.get("type") || "";
@@ -73,11 +73,11 @@ function CommunityFeedPage() {
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await postsService.list(filters);
-      setPosts(data);
+      const data = await postsService.listFeed(filters);
+      setFeed(data);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
-      setPosts([]);
+      setFeed([]);
     } finally {
       setLoading(false);
     }
@@ -115,9 +115,15 @@ function CommunityFeedPage() {
     router.push(`/community${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
+  const postsForStats = useMemo(() => {
+    return feed
+      .map((item) => (item.kind === "repost" ? item.repost?.original_post : item.post))
+      .filter((p): p is Post => Boolean(p));
+  }, [feed]);
+
   const topContributors = useMemo(() => {
     const counts = new Map<string, { name: string; count: number }>();
-    for (const post of posts) {
+    for (const post of postsForStats) {
       if (!post.author) continue;
       const key = String(post.author.id);
       const existing = counts.get(key);
@@ -128,7 +134,7 @@ function CommunityFeedPage() {
       }
     }
     return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [posts]);
+  }, [postsForStats]);
 
   return (
     <div className="min-h-screen bg-surface transition-colors duration-300">
@@ -202,7 +208,7 @@ function CommunityFeedPage() {
                 <PostCardSkeleton key={i} />
               ))}
             </div>
-          ) : posts.length === 0 ? (
+          ) : feed.length === 0 ? (
             <EmptyState
               icon={MessageSquare}
               title={
@@ -221,9 +227,23 @@ function CommunityFeedPage() {
             />
           ) : (
             <div className="space-y-4">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+              {feed.map((item, index) => {
+                if (item.kind === "repost" && item.repost?.original_post) {
+                  return (
+                    <div key={`repost-${item.repost.id}-${index}`} className="space-y-2">
+                      <p className="text-subtle px-1 text-xs font-medium">
+                        🔁 Reposted by {item.repost.reposter?.full_name ?? "someone"}
+                        {item.repost.comment ? ` — “${item.repost.comment}”` : ""}
+                      </p>
+                      <PostCard post={item.repost.original_post} />
+                    </div>
+                  );
+                }
+                if (item.post) {
+                  return <PostCard key={`post-${item.post.id}`} post={item.post} />;
+                }
+                return null;
+              })}
             </div>
           )}
         </main>
