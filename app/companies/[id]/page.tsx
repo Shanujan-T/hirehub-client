@@ -8,12 +8,14 @@ import { toast } from "sonner";
 import { JobCard } from "@/components/cards";
 import { BackLink } from "@/components/back-link";
 import { EntityAvatar } from "@/components/entity-avatar";
+import { PostCard } from "@/components/post-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState, EmptyState } from "@/app/_components/page-states";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth-provider";
 import companiesService from "@/services/companies";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { Avatar } from "@/components/ui/shared";
 import { cn } from "@/lib/utils";
 import type { Company } from "@/types";
 
@@ -29,6 +31,8 @@ export default function CompanyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
   const [followBusy, setFollowBusy] = useState(false);
+  const [employees, setEmployees] = useState<import("@/types").CompanyEmployee[]>([]);
+  const [companyPosts, setCompanyPosts] = useState<import("@/types").Post[]>([]);
 
   useEffect(() => {
     if (!companyId || Number.isNaN(companyId)) {
@@ -40,6 +44,9 @@ export default function CompanyDetailPage() {
       .then((data) => setCompany(data))
       .catch((err) => toast.error(getApiErrorMessage(err)))
       .finally(() => setLoading(false));
+
+    companiesService.getEmployees(companyId).then(setEmployees).catch(() => setEmployees([]));
+    companiesService.getPosts(companyId).then(setCompanyPosts).catch(() => setCompanyPosts([]));
   }, [companyId]);
 
   useEffect(() => {
@@ -257,6 +264,39 @@ export default function CompanyDetailPage() {
             </Card>
           </aside>
         </div>
+
+        <hr className="my-12 border-t border-default" />
+
+        {employees.length > 0 ? (
+          <section aria-label="Employees" className="mb-12">
+            <h2 className="text-heading mb-2 text-xl font-bold">
+              People who work here ({employees.length})
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {employees.map((person) => (
+                <div key={person.id} className="flex items-center gap-3 rounded-xl border border-default bg-surface-card p-3">
+                  <Avatar name={person.full_name} src={person.avatar_url} entityId={person.id} />
+                  <div>
+                    <p className="font-medium text-heading">{person.full_name}</p>
+                    <p className="text-subtle text-xs">{person.title}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {companyPosts.length > 0 ? (
+          <section aria-label="Company updates" className="mb-12">
+            <h2 className="text-heading mb-2 text-xl font-bold">Company updates</h2>
+            <p className="text-subtle mb-4 text-sm">Posts from this company</p>
+            <div className="space-y-4 max-w-3xl">
+              {companyPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <hr className="my-12 border-t border-default" />
 
