@@ -1,6 +1,8 @@
 import apiClient from "@/lib/api-client";
 import type {
   CandidatesQueryParams,
+  DiscoverUsersParams,
+  DiscoverUsersResponse,
   ImportResult,
   MessageResponse,
   PatchUserStatusPayload,
@@ -11,6 +13,21 @@ export const usersService = {
   async list(): Promise<User[]> {
     const { data } = await apiClient.get<{ users: User[] }>("/api/users");
     return data.users;
+  },
+
+  async discover(params?: DiscoverUsersParams): Promise<DiscoverUsersResponse> {
+    const { data } = await apiClient.get<DiscoverUsersResponse>(
+      "/api/users/discover",
+      {
+        params: {
+          search: params?.search || undefined,
+          role: params?.role || undefined,
+          page: params?.page ?? 1,
+          per_page: params?.per_page ?? 16,
+        },
+      },
+    );
+    return data;
   },
 
   async getById(id: number): Promise<User> {
