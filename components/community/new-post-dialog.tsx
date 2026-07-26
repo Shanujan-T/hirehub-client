@@ -13,11 +13,13 @@ import { Textarea } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PostImageDropzone } from "@/components/post-image-dropzone";
 import postsService from "@/services/posts";
+import companiesService from "@/services/companies";
+import { useAuth } from "@/providers/auth-provider";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { FEED_POST_TYPES } from "@/lib/constants";
 import { POST_TYPE_FILTER_ACTIVE, POST_TYPE_FILTER_IDLE } from "@/lib/post-utils";
 import { cn, formatLabel } from "@/lib/utils";
-import type { PostType } from "@/types";
+import type { Company, PostType } from "@/types";
 
 const createPostSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -36,9 +38,12 @@ interface NewPostDialogProps {
 
 export function NewPostDialog({ open, onClose, onCreated }: NewPostDialogProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [myCompany, setMyCompany] = useState<Company | null>(null);
+  const [postAsCompany, setPostAsCompany] = useState(false);
 
   const {
     register,
@@ -55,6 +60,18 @@ export function NewPostDialog({ open, onClose, onCreated }: NewPostDialogProps) 
   const selectedType = watch("type");
 
   useEffect(() => {
+    if (!open || user?.role !== "employer") {
+      setMyCompany(null);
+      setPostAsCompany(false);
+      return;
+    }
+    companiesService
+      .getMy()
+      .then(setMyCompany)
+      .catch(() => setMyCompany(null));
+  }, [open, user?.role]);
+
+  useEffect(() => {
     if (!imageFile) {
       setPreviewUrl(null);
       return;
@@ -68,6 +85,7 @@ export function NewPostDialog({ open, onClose, onCreated }: NewPostDialogProps) 
     reset({ type: "discussion", link_url: "" });
     setImageFile(null);
     setPreviewUrl(null);
+    setPostAsCompany(false);
     onClose();
   };
 
@@ -80,6 +98,7 @@ export function NewPostDialog({ open, onClose, onCreated }: NewPostDialogProps) 
         type: data.type as PostType,
         link_url: data.link_url || undefined,
         image: imageFile,
+        company_id: postAsCompany && myCompany ? myCompany.id : undefined,
       });
       toast.success("Post created successfully!");
       handleClose();
@@ -127,6 +146,23 @@ export function NewPostDialog({ open, onClose, onCreated }: NewPostDialogProps) 
             </p>
           )}
         </FormGroup>
+
+        {myCompany ? (
+          <label className="flex items-start gap-3 text-sm text-heading">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-[var(--brand-blue)]"
+              checked={postAsCompany}
+              onChange={(e) => setPostAsCompany(e.target.checked)}
+            />
+            <span>
+              Post as {myCompany.name}
+              <span className="text-subtle mt-0.5 block text-xs">
+                Shows on the company profile under Company updates
+              </span>
+            </span>
+          </label>
+        ) : null}
 
         <FormGroup label="Content">
           <Textarea
