@@ -118,6 +118,25 @@ export const companiesService = {
       .filter((c): c is Company => Boolean(c));
   },
 
+  async listFeatured(limit = 5): Promise<Company[]> {
+    const { data } = await apiClient.get<{ companies: Company[] }>(
+      "/api/companies/featured",
+      { params: { limit } },
+    );
+    return data.companies;
+  },
+
+  async feature(
+    id: number,
+    payload?: { days?: number; featured_pitch?: string },
+  ): Promise<Company> {
+    const { data } = await apiClient.patch<{ company: Company; message: string }>(
+      `/api/companies/${id}/feature`,
+      payload ?? {},
+    );
+    return data.company;
+  },
+
   async exportCsv(): Promise<void> {
     const { downloadFromApi } = await import("@/lib/download");
     await downloadFromApi("/api/companies/export", "companies.csv");
