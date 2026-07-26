@@ -172,6 +172,19 @@ export const jobsService = {
     return data.jobs;
   },
 
+  async getAlsoApplied(
+    id: number,
+  ): Promise<{ jobs: Job[]; source: "also_applied" | "similar" }> {
+    const { data } = await apiClient.get<{
+      jobs: Job[];
+      source?: "also_applied" | "similar";
+    }>(`/api/jobs/${id}/also-applied`);
+    return {
+      jobs: data.jobs ?? [],
+      source: data.source === "similar" ? "similar" : "also_applied",
+    };
+  },
+
   async exportApplicantsCsv(jobId: number): Promise<void> {
     const { downloadFromApi } = await import("@/lib/download");
     await downloadFromApi(
