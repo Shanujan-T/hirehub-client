@@ -11,6 +11,7 @@ import {
   LogOut,
   Mail,
   Menu,
+  Network,
   User,
   Users,
   X,
@@ -41,7 +42,7 @@ const publicLinks = [
 const sidebarLinks: Record<UserRole, { href: string; label: string; icon: typeof LayoutDashboard }[]> = {
   seeker: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/network", label: "My Network", icon: Users },
+    { href: "/network", label: "My Network", icon: Network },
     { href: "/my-communities", label: "My Communities", icon: Users },
     { href: "/applications", label: "Applications", icon: FileText },
     { href: "/messages", label: "Messages", icon: Mail },
@@ -50,7 +51,7 @@ const sidebarLinks: Record<UserRole, { href: string; label: string; icon: typeof
   ],
   employer: [
     { href: "/employer/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/network", label: "My Network", icon: Users },
+    { href: "/network", label: "My Network", icon: Network },
     { href: "/employer/jobs", label: "My Jobs", icon: Briefcase },
     { href: "/employer/candidates", label: "Candidates", icon: Users },
     { href: "/messages", label: "Messages", icon: Mail },
