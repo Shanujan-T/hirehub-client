@@ -42,7 +42,7 @@ function SalaryInsightsPanel() {
   if (!insight?.count) return null;
 
   return (
-    <div className="mt-4 rounded-2xl border border-default bg-surface-card p-4">
+    <div className="rounded-2xl border border-default bg-surface-card p-4">
       <h3 className="text-heading text-sm font-bold uppercase tracking-wide">Salary insights</h3>
       <p className="text-subtle mt-2 text-sm">
         {role || "Roles"}
@@ -356,15 +356,17 @@ function JobsPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-          <aside>
+      <div className="mx-auto max-w-6xl px-4 pt-4 pb-8 sm:px-6 lg:px-8">
+        <div className="grid items-start gap-8 lg:grid-cols-[260px_1fr]">
+          <aside className="w-full self-start lg:sticky lg:top-24 lg:z-10">
             <JobFiltersPanel />
             <Suspense fallback={null}>
               <SaveSearchPanel />
             </Suspense>
-            <SalaryInsightsPanel />
-            <FeaturedEmployerCard />
+            <div className="mt-4 space-y-4">
+              <FeaturedEmployerCard />
+              <SalaryInsightsPanel />
+            </div>
           </aside>
 
           <main>

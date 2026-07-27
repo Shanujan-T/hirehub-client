@@ -51,7 +51,7 @@ export function FeaturedEmployerCard() {
     `${company.name} is hiring — ${company.open_jobs_count ?? 0} open roles`;
 
   return (
-    <div className="relative mt-4 overflow-hidden rounded-2xl border border-default bg-surface-card p-4 lg:sticky lg:top-24 lg:z-10">
+    <div className="relative overflow-hidden rounded-2xl border border-default bg-surface-card p-4">
       {/* Brand accent bar — same language as job/community list cards */}
       <div
         className="brand-gradient absolute inset-y-0 left-0 w-[3px]"
