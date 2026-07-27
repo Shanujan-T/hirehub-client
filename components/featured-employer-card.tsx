@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Briefcase } from "lucide-react";
 import { EntityAvatar } from "@/components/entity-avatar";
 import { Button } from "@/components/ui/button";
 import companiesService from "@/services/companies";
@@ -51,8 +51,18 @@ export function FeaturedEmployerCard() {
     `${company.name} is hiring — ${company.open_jobs_count ?? 0} open roles`;
 
   return (
-    <div className="relative mt-4 rounded-2xl border border-default bg-surface-card p-4">
-      <h3 className="text-heading text-sm font-bold uppercase tracking-wide">
+    <div className="relative mt-4 overflow-hidden rounded-2xl border border-default bg-surface-card p-4">
+      {/* Brand accent bar — same language as job/community list cards */}
+      <div
+        className="brand-gradient absolute inset-y-0 left-0 w-[3px]"
+        aria-hidden
+      />
+
+      <h3 className="text-heading flex items-center gap-2 text-sm font-bold uppercase tracking-wide">
+        <Briefcase
+          className="h-4 w-4 shrink-0 text-[var(--brand-blue)]"
+          aria-hidden
+        />
         Hiring Now
       </h3>
 
