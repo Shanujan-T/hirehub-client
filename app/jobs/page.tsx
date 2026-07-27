@@ -444,7 +444,7 @@ function JobsPage() {
 
       <div className="mx-auto max-w-6xl px-4 pt-4 pb-8 sm:px-6 lg:px-8">
         <div className="grid items-start gap-8 lg:grid-cols-[260px_1fr]">
-          <aside className="w-full self-start lg:sticky lg:top-24 lg:z-10">
+          <aside className="w-full self-start lg:sticky lg:top-[calc(var(--navbar-height)+0.5rem)] lg:z-10">
             <JobFiltersPanel />
             <Suspense fallback={null}>
               <SaveSearchPanel />

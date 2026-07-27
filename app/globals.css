@@ -54,6 +54,8 @@
   --shadow-soft: 0 4px 24px rgba(4, 27, 95, 0.08);
   --shadow-card: 0 8px 32px rgba(4, 27, 95, 0.1);
   --navbar-bg: rgba(253, 253, 253, 0.92);
+  /* Measured sticky Navbar: 3px brand-gradient-line + h-16 (64px) + 1px border-b */
+  --navbar-height: 68px;
   --footer-bg: #041b5f;
   --footer-text: #e2e8f0;
   --sidebar-bg: #ffffff;
