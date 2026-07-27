@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, Briefcase, Sparkles } from "lucide-react";
+import { Bookmark, Briefcase, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { FeaturedEmployerCard } from "@/components/featured-employer-card";
 import { SearchBar } from "@/components/search/search-bar";
@@ -219,6 +219,14 @@ function SaveSearchPanel() {
   );
 }
 
+const AI_SEARCH_HINT_KEY = "hirehub_ai_search_hint_dismissed";
+
+const AI_SEARCH_PLACEHOLDERS = [
+  'Try: "remote data jobs in Colombo for freshers"',
+  'Try: "entry level marketing roles in Kandy"',
+  'Try: "full time developer jobs near Colombo"',
+] as const;
+
 function JobsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -227,6 +235,8 @@ function JobsPage() {
   const [plainEnglish, setPlainEnglish] = useState(false);
   const [nlQuery, setNlQuery] = useState("");
   const [nlSearching, setNlSearching] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(-1);
+  const [showAiHint, setShowAiHint] = useState(false);
 
   const q = searchParams.get("q") || undefined;
   const location = searchParams.get("location") || undefined;
@@ -278,6 +288,31 @@ function JobsPage() {
     };
   }, [fetchJobs, plainEnglish]);
 
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(AI_SEARCH_HINT_KEY) !== "1") {
+        setShowAiHint(true);
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
+  const dismissAiHint = () => {
+    setShowAiHint(false);
+    try {
+      localStorage.setItem(AI_SEARCH_HINT_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const applyKeywordFallback = async (query: string) => {
+    const data = await jobsService.list({ q: query });
+    setJobs(data);
+    router.replace(`/jobs?q=${encodeURIComponent(query)}`);
+  };
+
   const runPlainEnglishSearch = async () => {
     const query = nlQuery.trim();
     if (query.length < 4) {
@@ -298,12 +333,33 @@ function JobsPage() {
       if (f.experience_level) params.set("experience_level", f.experience_level);
       const qs = params.toString();
       router.replace(qs ? `/jobs?${qs}` : "/jobs");
-    } catch (err) {
-      toast.error(getApiErrorMessage(err));
-      setJobs([]);
+    } catch {
+      toast.error(
+        "Couldn't process that search — trying a simple keyword search. You can also rephrase or use the filters below.",
+      );
+      try {
+        await applyKeywordFallback(query);
+      } catch (fallbackErr) {
+        toast.error(getApiErrorMessage(fallbackErr));
+        setJobs([]);
+      }
     } finally {
       setNlSearching(false);
       setLoading(false);
+    }
+  };
+
+  const handlePlainEnglishToggle = () => {
+    const next = !plainEnglish;
+    setPlainEnglish(next);
+    if (next) {
+      setPlaceholderIndex((i) => (i + 1) % AI_SEARCH_PLACEHOLDERS.length);
+      dismissAiHint();
+      // Leave structured URL filters behind so they don't look active in NL mode.
+      router.replace("/jobs");
+    } else {
+      setNlQuery("");
+      // Structured SearchBar + fetchJobs will run from current URL params.
     }
   };
 
@@ -315,16 +371,42 @@ function JobsPage() {
           <p className="text-subtle mt-1">
             Discover opportunities that match your skills and goals
           </p>
-          <div className="mt-4">
-            <label className="inline-flex items-center gap-2 text-sm text-heading">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-[var(--brand-blue)]"
-                checked={plainEnglish}
-                onChange={(e) => setPlainEnglish(e.target.checked)}
-              />
-              Search in plain English
-            </label>
+          <div className="relative mt-4 inline-flex flex-col items-start gap-2">
+            <button
+              type="button"
+              aria-pressed={plainEnglish}
+              onClick={handlePlainEnglishToggle}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                plainEnglish
+                  ? "brand-gradient border-transparent text-white shadow-sm"
+                  : "border-default bg-surface-card text-subtle hover:border-[#0C44B7]/40 hover:text-heading",
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              Try AI Search
+            </button>
+            {showAiHint ? (
+              <div
+                role="status"
+                className="absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-default bg-surface-card p-3 text-xs text-heading shadow-lg"
+              >
+                <div className="flex items-start gap-2">
+                  <p className="flex-1 leading-relaxed">
+                    New: describe the job you want in your own words, and
+                    we&apos;ll find it for you.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissAiHint}
+                    className="shrink-0 rounded-md p-0.5 text-subtle hover:bg-surface-muted hover:text-heading"
+                    aria-label="Dismiss hint"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
           <div className="mt-4">
             {plainEnglish ? (
@@ -332,7 +414,11 @@ function JobsPage() {
                 <Input
                   value={nlQuery}
                   onChange={(e) => setNlQuery(e.target.value)}
-                  placeholder='e.g. "find me remote data jobs in Colombo"'
+                  placeholder={
+                    AI_SEARCH_PLACEHOLDERS[
+                      placeholderIndex < 0 ? 0 : placeholderIndex
+                    ]
+                  }
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
