@@ -360,11 +360,11 @@ function JobsPage() {
         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
           <aside>
             <JobFiltersPanel />
-            <FeaturedEmployerCard />
             <Suspense fallback={null}>
               <SaveSearchPanel />
             </Suspense>
             <SalaryInsightsPanel />
+            <FeaturedEmployerCard />
           </aside>
 
           <main>
